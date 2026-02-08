@@ -1,30 +1,31 @@
 {
     "team": [
         {
-            "name": "Team Member Name 1",
-            "email": "email@eng.pdn.ac.lk",
-            "eNumber": "E/yy/xxx"
+            "name": "Wijenayaka D.L.P.A.",
+            "email": "e21442@eng.pdn.ac.lk",
+            "eNumber": "E/21/442"
         },
         {
-            "name": "Team Member Name 2",
-            "email": "email@eng.pdn.ac.lk",
-            "eNumber": "E/yy/xxx"
+            "name": "Francisco R.D.D.K.",
+            "email": "e21141@eng.pdn.ac.lk",
+            "eNumber": "E/21/141"
         },
         {
-            "name": "Team Member Name 3",
-            "email": "email@eng.pdn.ac.lk",
-            "eNumber": "E/yy/xxx"
+            "name": "Gunerathne R.C.",
+            "email": "e21157@eng.pdn.ac.lk",
+            "eNumber": "E/21/157"
+        },
+        {
+            "name": "Sasindu K.T.",
+            "email": "e21361@eng.pdn.ac.lk",
+            "eNumber": "E/21/361"
         }
     ],
     "supervisors": [
         {
-            "name": "Dr. Supervisor 1",
-            "email": "email@eng.pdn.ac.lk"
-        },
-        {
-            "name": "Supervisor 2",
-            "email": "email@eng.pdn.ac.lk"
+            "name": "Ms. Yasodha Vimukthi",
+            "email": "yasodhav@eng.pdn.ac.lk"
         }
     ],
-    "tags": ["Web", "Embedded Systems"]
+    "tags": ["Web", "Embedded Systems", "Full-Stack", "RESTful API", "JWT Authentication", "Responsive Design"]
 }
