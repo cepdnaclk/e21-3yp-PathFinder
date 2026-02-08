@@ -89,7 +89,7 @@ PathFinder demonstrates a practical and affordable wearable navigation solution 
 ---
 
 ## Links
-- [Project Repository](https://github.com/cepdnaclk/{{ page.repository-name }}){:target="_blank"}
-- [Project Page](https://cepdnaclk.github.io/{{ page.repository-name }}){:target="_blank"}
+- [Project Repository](https://github.com/cepdnaclk/e21-3yp-PathFinder)
+- [Project Page](https://cepdnaclk.github.io/e21-3yp-PathFinder)
 - [Department of Computer Engineering](http://www.ce.pdn.ac.lk/)
 - [University of Peradeniya](https://eng.pdn.ac.lk/)
