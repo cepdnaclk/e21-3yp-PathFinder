@@ -3,10 +3,19 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/device_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
+import '../alerts/sos_alert_screen.dart';
 import '../tracking/live_tracking_screen.dart';
+import '../../services/notification_service.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool _sosScreenOpen = false;
 
   Future<void> _logout(BuildContext context) async {
     await AuthService().signOut();
@@ -16,12 +25,94 @@ class HomeScreen extends StatelessWidget {
     Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
   }
 
+  void _checkAndOpenSos(DeviceModel device) {
+    if (!mounted) return;
+    if (!device.sosActive) {
+      _sosScreenOpen = false;
+      return;
+    }
+
+    if (_sosScreenOpen) return;
+
+    _sosScreenOpen = true;
+
+    Future.microtask(() async {
+      await NotificationService.showSosNotification(
+        title: 'SOS Alert',
+        body: '${device.userName} has triggered an emergency alert.',
+      );
+
+      if (!mounted) return;
+
+      final shouldOpen = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('SOS Alert'),
+            content: Text(
+              '${device.userName} has triggered an emergency alert.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Later'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Open'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (shouldOpen == true && mounted) {
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => SosAlertScreen(
+              userName: device.userName,
+              lat: device.gpsLat,
+              lng: device.gpsLng,
+              batteryLevel: device.batteryLevel,
+              sosActive: device.sosActive,
+            ),
+          ),
+        );
+      }
+
+      if (mounted) {
+        _sosScreenOpen = false;
+      }
+    });
+  }
+
+  Widget _actionCard({
+    required IconData icon,
+    required String title,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 40, color: color),
+            const SizedBox(height: 10),
+            Text(title),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     final firestoreService = FirestoreService();
 
-    // temporary fixed device ID for testing
     const String deviceId = 'pathfinder_001';
 
     return Scaffold(
@@ -38,9 +129,7 @@ class HomeScreen extends StatelessWidget {
         stream: firestoreService.getDeviceStream(deviceId),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return Center(
-              child: Text('Error: ${snapshot.error}'),
-            );
+            return Center(child: Text('Error: ${snapshot.error}'));
           }
 
           if (!snapshot.hasData) {
@@ -48,6 +137,7 @@ class HomeScreen extends StatelessWidget {
           }
 
           final device = snapshot.data!;
+          _checkAndOpenSos(device);
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -81,9 +171,7 @@ class HomeScreen extends StatelessWidget {
                       color: device.online ? Colors.green : Colors.red,
                     ),
                     title: Text(device.userName),
-                    subtitle: Text(
-                      device.online ? "Online" : "Offline",
-                    ),
+                    subtitle: Text(device.online ? "Online" : "Offline"),
                     trailing: Icon(
                       device.online ? Icons.check_circle : Icons.cancel,
                       color: device.online ? Colors.green : Colors.red,
@@ -95,9 +183,7 @@ class HomeScreen extends StatelessWidget {
                   child: ListTile(
                     leading: const Icon(Icons.location_on, color: Colors.blue),
                     title: const Text("Last Known Location"),
-                    subtitle: Text(
-                      "Lat: ${device.gpsLat}, Lng: ${device.gpsLng}",
-                    ),
+                    subtitle: Text("Lat: ${device.gpsLat}, Lng: ${device.gpsLng}"),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -110,6 +196,7 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Card(
+                  color: device.sosActive ? Colors.red.shade50 : null,
                   child: ListTile(
                     leading: Icon(
                       Icons.warning,
@@ -151,7 +238,20 @@ class HomeScreen extends StatelessWidget {
                       icon: Icons.warning,
                       title: "SOS Alerts",
                       color: Colors.red,
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => SosAlertScreen(
+                              userName: device.userName,
+                              lat: device.gpsLat,
+                              lng: device.gpsLng,
+                              batteryLevel: device.batteryLevel,
+                              sosActive: device.sosActive,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                     _actionCard(
                       icon: Icons.history,
@@ -171,27 +271,6 @@ class HomeScreen extends StatelessWidget {
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _actionCard({
-    required IconData icon,
-    required String title,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 40, color: color),
-            const SizedBox(height: 10),
-            Text(title),
-          ],
-        ),
       ),
     );
   }
