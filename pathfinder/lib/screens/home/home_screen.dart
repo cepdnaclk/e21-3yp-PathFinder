@@ -6,6 +6,7 @@ import '../../services/firestore_service.dart';
 import '../alerts/sos_alert_screen.dart';
 import '../tracking/live_tracking_screen.dart';
 import '../../services/notification_service.dart';
+import '../alerts/alert_history_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -37,6 +38,14 @@ class _HomeScreenState extends State<HomeScreen> {
     _sosScreenOpen = true;
 
     Future.microtask(() async {
+      await FirestoreService().createSosAlert(
+        deviceId: device.id,
+        userName: device.userName,
+        lat: device.gpsLat,
+        lng: device.gpsLng,
+        batteryLevel: device.batteryLevel,
+      );
+
       await NotificationService.showSosNotification(
         title: 'SOS Alert',
         body: '${device.userName} has triggered an emergency alert.',
@@ -257,7 +266,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       icon: Icons.history,
                       title: "Alert History",
                       color: Colors.orange,
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AlertHistoryScreen(),
+                          ),
+                        );
+                      },
                     ),
                     _actionCard(
                       icon: Icons.settings,
