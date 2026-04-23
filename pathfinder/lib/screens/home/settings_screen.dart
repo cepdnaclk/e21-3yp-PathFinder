@@ -216,20 +216,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         iconColor: Colors.blue,
                       ),
                       _infoCard(
-                        icon: Icons.badge,
-                        title: "Device Name",
-                        value: (_deviceData?['deviceName'] ?? 'Unknown').toString(),
-                      ),
-                      _infoCard(
                         icon: Icons.circle,
                         title: "Status",
-                        value: (_deviceData?['status'] ?? 'Unknown').toString(),
-                        iconColor: Colors.green,
-                      ),
-                      _infoCard(
-                        icon: Icons.link,
-                        title: "Owner ID",
-                        value: (_deviceData?['ownerId'] ?? 'Unknown').toString(),
+                        value: (_deviceData?['online'] == true) ? 'Online' : 'Offline',
+                        iconColor: (_deviceData?['online'] == true) ? Colors.green : Colors.red,
                       ),
                       const SizedBox(height: 24),
                       const Text(

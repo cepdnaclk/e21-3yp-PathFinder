@@ -7,6 +7,8 @@ import '../alerts/sos_alert_screen.dart';
 import '../tracking/live_tracking_screen.dart';
 import '../../services/notification_service.dart';
 import '../alerts/alert_history_screen.dart';
+import 'settings_screen.dart';
+import '../tracking/camera_feed_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -241,10 +243,22 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 12),
                     Card(
-                      child: ListTile(
-                        leading: const Icon(Icons.battery_full, color: Colors.orange),
-                        title: const Text("Battery Level"),
-                        subtitle: Text("${device.batteryLevel}%"),
+                      clipBehavior: Clip.antiAlias,
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: FractionallySizedBox(
+                              alignment: Alignment.centerLeft,
+                              widthFactor: (device.batteryLevel.clamp(0, 100) / 100),
+                              child: Container(color: Colors.green.shade100),
+                            ),
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.battery_full, color: Colors.orange),
+                            title: const Text("Battery Level"),
+                            subtitle: Text("${device.batteryLevel}%"),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -288,6 +302,19 @@ class _HomeScreenState extends State<HomeScreen> {
                           },
                         ),
                         _actionCard(
+                          icon: Icons.videocam,
+                          title: "Live Camera",
+                          color: Colors.purple,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => CameraFeedScreen(deviceId: deviceId),
+                              ),
+                            );
+                          },
+                        ),
+                        _actionCard(
                           icon: Icons.warning,
                           title: "SOS Alerts",
                           color: Colors.red,
@@ -324,7 +351,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           icon: Icons.settings,
                           title: "Settings",
                           color: Colors.grey,
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => SettingsScreen(deviceId: deviceId),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
