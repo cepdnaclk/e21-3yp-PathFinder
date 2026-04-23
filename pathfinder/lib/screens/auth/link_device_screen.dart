@@ -78,7 +78,7 @@ class _LinkDeviceScreenState extends State<LinkDeviceScreen> {
               ),
               const SizedBox(height: 12),
               const Text(
-                "Example: pathfinder_001",
+                "Example: your_device_id",
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),

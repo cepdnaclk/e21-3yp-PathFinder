@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 import '../../models/alert_model.dart';
 import '../../services/firestore_service.dart';
-import 'alert_detail_screen.dart';
 
 class AlertHistoryScreen extends StatelessWidget {
-  const AlertHistoryScreen({super.key});
+  final String deviceId;
 
-  String _formatTimestamp(AlertModel alert) {
-    final dt = alert.timestamp?.toDate();
-    if (dt == null) return 'No time available';
-    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} '
-        '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-  }
+  const AlertHistoryScreen({
+    super.key,
+    required this.deviceId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +19,7 @@ class AlertHistoryScreen extends StatelessWidget {
         title: const Text('Alert History'),
       ),
       body: StreamBuilder<List<AlertModel>>(
-        stream: firestoreService.getAlertHistoryStream(),
+        stream: firestoreService.getAlertHistoryStream(deviceId),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(
@@ -40,7 +37,7 @@ class AlertHistoryScreen extends StatelessWidget {
 
           if (alerts.isEmpty) {
             return const Center(
-              child: Text('No alerts found'),
+              child: Text('No alerts found for this device'),
             );
           }
 
@@ -49,29 +46,20 @@ class AlertHistoryScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final alert = alerts[index];
 
-              final isSos = alert.type == 'sos';
-
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: isSos ? Colors.red.shade100 : Colors.grey.shade300,
-                    child: Icon(
-                      isSos ? Icons.warning : Icons.notifications,
-                      color: isSos ? Colors.red : Colors.black54,
-                    ),
+                  leading: const Icon(Icons.warning, color: Colors.red),
+                  title: Text(alert.userName),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Device: ${alert.deviceId}'),
+                      Text('Battery: ${alert.batteryLevel}%'),
+                      Text('Lat: ${alert.lat}, Lng: ${alert.lng}'),
+                      const Text('Timestamp unavailable'),
+                    ],
                   ),
-                  title: Text('${alert.userName} - ${alert.type.toUpperCase()}'),
-                  subtitle: Text(_formatTimestamp(alert)),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AlertDetailScreen(alert: alert),
-                      ),
-                    );
-                  },
                 ),
               );
             },

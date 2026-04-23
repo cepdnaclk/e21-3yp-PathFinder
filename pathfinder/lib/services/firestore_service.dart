@@ -109,15 +109,15 @@ class FirestoreService {
   // ALERT HISTORY STREAM
   // ==============================
 
-  Stream<List<AlertModel>> getAlertHistoryStream() {
+  Stream<List<AlertModel>> getAlertHistoryStream(String deviceId) {
     return _firestore
         .collection('alerts')
+        .where('deviceId', isEqualTo: deviceId)
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
       return snapshot.docs.map((doc) {
         final data = doc.data();
-
         return AlertModel.fromFirestore(doc.id, data);
       }).toList();
     });

@@ -80,6 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
         await Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => SosAlertScreen(
+              deviceId: device.id,
               userName: device.userName,
               lat: device.gpsLat,
               lng: device.gpsLng,
@@ -295,6 +296,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (_) => SosAlertScreen(
+                                  deviceId: device.id,
                                   userName: device.userName,
                                   lat: device.gpsLat,
                                   lng: device.gpsLng,
@@ -313,7 +315,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const AlertHistoryScreen(),
+                                  builder: (_) => AlertHistoryScreen(deviceId: deviceId),
                               ),
                             );
                           },

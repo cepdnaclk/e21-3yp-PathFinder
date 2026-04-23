@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:map_launcher/map_launcher.dart';
 
 class SosAlertScreen extends StatelessWidget {
+  final String deviceId;
   final String userName;
   final double lat;
   final double lng;
@@ -10,6 +11,7 @@ class SosAlertScreen extends StatelessWidget {
 
   const SosAlertScreen({
     super.key,
+    required this.deviceId,
     required this.userName,
     required this.lat,
     required this.lng,
