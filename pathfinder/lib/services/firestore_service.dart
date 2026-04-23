@@ -26,6 +26,34 @@ class FirestoreService {
     return data['deviceId'] as String?;
   }
 
+  Future<Map<String, dynamic>?> getCaretakerData(String uid) async {
+    final doc = await _firestore.collection('caretakers').doc(uid).get();
+    return doc.data();
+  }
+
+  Future<Map<String, dynamic>?> getDeviceData(String deviceId) async {
+    final doc = await _firestore.collection('devices').doc(deviceId).get();
+    return doc.data();
+  }
+
+  Future<void> unlinkCaretakerFromDevice({
+    required String uid,
+    required String deviceId,
+  }) async {
+    final caretakerRef = _firestore.collection('caretakers').doc(uid);
+    final deviceRef = _firestore.collection('devices').doc(deviceId);
+
+    await caretakerRef.set({
+      'deviceId': FieldValue.delete(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    await deviceRef.set({
+      'ownerId': FieldValue.delete(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
   Future<void> linkCaretakerToDevice(String deviceId) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
