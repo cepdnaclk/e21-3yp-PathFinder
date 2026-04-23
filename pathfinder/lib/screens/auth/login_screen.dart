@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../home/home_screen.dart';
+import '../../services/firestore_service.dart';
+import 'link_device_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -21,22 +23,35 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final userCredential = await _authService.signInWithGoogle();
+      final user = await _authService.signInWithGoogle();
 
-      if (userCredential != null && mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
+      if (user != null && mounted) {
+        final deviceId = await FirestoreService().getLinkedDeviceId(user.uid);
+
+        if (!mounted) return;
+
+        if (deviceId == null || deviceId.isEmpty) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const LinkDeviceScreen()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const HomeScreen()),
+          );
+        }
       }
     } catch (e) {
       setState(() {
-        _error = 'Google sign-in failed';
+        _error = 'Google sign-in failed: $e';
       });
     } finally {
-      setState(() {
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
     }
   }
 

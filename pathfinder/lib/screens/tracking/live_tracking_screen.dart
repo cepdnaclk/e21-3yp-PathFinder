@@ -6,15 +6,18 @@ import 'package:map_launcher/map_launcher.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class LiveTrackingScreen extends StatefulWidget {
-  const LiveTrackingScreen({super.key});
+  final String deviceId;
+
+  const LiveTrackingScreen({
+    super.key,
+    required this.deviceId,
+  });
 
   @override
   State<LiveTrackingScreen> createState() => _LiveTrackingScreenState();
 }
 
 class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
-  static const String deviceId = 'pathfinder_001';
-
   final MapController _mapController = MapController();
 
   bool _followUser = true;
@@ -84,7 +87,10 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
     if (_followUser) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          _mapController.move(LatLng(_currentLat, _currentLng), _mapController.camera.zoom);
+          _mapController.move(
+            LatLng(_currentLat, _currentLng),
+            _mapController.camera.zoom,
+          );
         }
       });
     }
@@ -115,7 +121,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
             .collection('devices')
-            .doc(deviceId)
+            .doc(widget.deviceId)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {

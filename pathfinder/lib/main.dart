@@ -1,41 +1,27 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'app.dart';
-import 'services/notification_service.dart';
+import 'screens/splash/splash_screen.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  debugPrint('MAIN 1: widgets initialized');
 
-  try {
-    debugPrint('MAIN 2: initializing firebase');
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    debugPrint('MAIN 3: firebase initialized');
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
-    runApp(const MyApp());
-    debugPrint('MAIN 4: app started');
+  runApp(const PathFinderApp());
+}
 
-    unawaited(() async {
-      debugPrint('MAIN 5: starting local notification service');
-      await NotificationService.initialize();
-      debugPrint('MAIN 6: local notification service finished');
-    }());
-  } catch (e, st) {
-    debugPrint('MAIN ERROR: $e');
-    debugPrintStack(stackTrace: st);
-    runApp(
-      MaterialApp(
-        home: Scaffold(
-          body: Center(
-            child: Text('Startup error: $e'),
-          ),
-        ),
-      ),
+class PathFinderApp extends StatelessWidget {
+  const PathFinderApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'PathFinder',
+      debugShowCheckedModeBanner: false,
+      home: const SplashScreen(),
     );
   }
 }
