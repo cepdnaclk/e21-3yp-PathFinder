@@ -135,6 +135,109 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  Future<void> _markSafeZone() async {
+    final nameController = TextEditingController(
+      text: _deviceData?['safeZone']?['name']?.toString() ?? 'Home',
+    );
+    final radiusController = TextEditingController(
+      text: _deviceData?['safeZone']?['radius']?.toString() ?? '100',
+    );
+
+    final lat = (_deviceData?['gpsLat'] ?? 0).toDouble();
+    final lng = (_deviceData?['gpsLng'] ?? 0).toDouble();
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Mark Safe Zone"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "The current device location will be saved as the safe zone center.",
+              ),
+              const SizedBox(height: 12),
+              Text("Current Lat: $lat"),
+              Text("Current Lng: $lng"),
+              const SizedBox(height: 12),
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: "Safe Zone Name",
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: radiusController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: "Radius (meters)",
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Save"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true) return;
+
+    try {
+      final radius = double.tryParse(radiusController.text.trim()) ?? 100;
+
+      await _firestoreService.saveSafeZone(
+        deviceId: widget.deviceId,
+        name: nameController.text.trim().isEmpty
+            ? 'Home'
+            : nameController.text.trim(),
+        lat: lat,
+        lng: lng,
+        radius: radius,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Safe zone saved")),
+      );
+
+      await _loadSettingsData();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to save safe zone: $e")),
+      );
+    }
+  }
+
+  Future<void> _removeSafeZone() async {
+    try {
+      await _firestoreService.removeSafeZone(widget.deviceId);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Safe zone removed")),
+      );
+
+      await _loadSettingsData();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to remove safe zone: $e")),
+      );
+    }
+  }
+
   Widget _infoCard({
     required IconData icon,
     required String title,
@@ -153,6 +256,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+    final safeZone = _deviceData?['safeZone'] as Map<String, dynamic>?;
 
     return Scaffold(
       appBar: AppBar(
@@ -184,29 +288,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const SizedBox(height: 16),
                       const Text(
                         "Account",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
                       _infoCard(
                         icon: Icons.person,
                         title: "Caretaker Name",
-                        value: (_caretakerData?['name'] ?? user?.displayName ?? 'Unknown').toString(),
+                        value: (_caretakerData?['name'] ??
+                                user?.displayName ??
+                                'Unknown')
+                            .toString(),
                       ),
                       _infoCard(
                         icon: Icons.email,
                         title: "Email",
-                        value: (_caretakerData?['email'] ?? user?.email ?? 'Unknown').toString(),
+                        value: (_caretakerData?['email'] ??
+                                user?.email ??
+                                'Unknown')
+                            .toString(),
                       ),
                       const SizedBox(height: 16),
                       const Text(
                         "Linked Device",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
                       _infoCard(
@@ -219,22 +323,74 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         icon: Icons.circle,
                         title: "Status",
                         value: (_deviceData?['online'] == true) ? 'Online' : 'Offline',
-                        iconColor: (_deviceData?['online'] == true) ? Colors.green : Colors.red,
+                        iconColor: (_deviceData?['online'] == true)
+                            ? Colors.green
+                            : Colors.red,
                       ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        "Safe Zone",
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      if (safeZone != null) ...[
+                        _infoCard(
+                          icon: Icons.home,
+                          title: "Zone Name",
+                          value: (safeZone['name'] ?? 'Unknown').toString(),
+                        ),
+                        _infoCard(
+                          icon: Icons.radio_button_checked,
+                          title: "Radius",
+                          value: "${(safeZone['radius'] ?? 0).toString()} meters",
+                        ),
+                        _infoCard(
+                          icon: Icons.location_on,
+                          title: "Center",
+                          value:
+                              "Lat: ${safeZone['lat']}, Lng: ${safeZone['lng']}",
+                        ),
+                      ] else
+                        const Card(
+                          child: ListTile(
+                            leading: Icon(Icons.location_off),
+                            title: Text("No safe zone set"),
+                          ),
+                        ),
                       const SizedBox(height: 24),
                       const Text(
                         "Actions",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
                       Card(
                         child: ListTile(
-                          leading: const Icon(Icons.sync_disabled, color: Colors.orange),
+                          leading: const Icon(Icons.my_location, color: Colors.blue),
+                          title: const Text("Mark Safe Zone"),
+                          subtitle: const Text(
+                            "Use current device location as safe zone center",
+                          ),
+                          onTap: _markSafeZone,
+                        ),
+                      ),
+                      if (safeZone != null)
+                        Card(
+                          child: ListTile(
+                            leading:
+                                const Icon(Icons.delete_outline, color: Colors.orange),
+                            title: const Text("Remove Safe Zone"),
+                            subtitle: const Text("Delete current safe zone"),
+                            onTap: _removeSafeZone,
+                          ),
+                        ),
+                      Card(
+                        child: ListTile(
+                          leading:
+                              const Icon(Icons.sync_disabled, color: Colors.orange),
                           title: const Text("Unlink Device"),
-                          subtitle: const Text("Remove this device from this caretaker account"),
+                          subtitle: const Text(
+                            "Remove this device from this caretaker account",
+                          ),
                           onTap: _unlinkDevice,
                         ),
                       ),

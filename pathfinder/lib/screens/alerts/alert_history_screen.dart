@@ -10,6 +10,30 @@ class AlertHistoryScreen extends StatelessWidget {
     required this.deviceId,
   });
 
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'acknowledged':
+        return Colors.orange;
+      case 'resolved':
+        return Colors.green;
+      case 'active':
+      default:
+        return Colors.red;
+    }
+  }
+
+  IconData _typeIcon(String type) {
+    switch (type) {
+      case 'low_battery':
+        return Icons.battery_alert;
+      case 'safe_zone_exit':
+        return Icons.location_off;
+      case 'sos':
+      default:
+        return Icons.warning;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final firestoreService = FirestoreService();
@@ -49,15 +73,40 @@ class AlertHistoryScreen extends StatelessWidget {
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 child: ListTile(
-                  leading: const Icon(Icons.warning, color: Colors.red),
-                  title: Text(alert.userName),
+                  leading: Icon(
+                    _typeIcon(alert.type),
+                    color: _statusColor(alert.status),
+                  ),
+                  title: Text('${alert.userName} • ${alert.type.toUpperCase()}'),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Device: ${alert.deviceId}'),
                       Text('Battery: ${alert.batteryLevel}%'),
                       Text('Lat: ${alert.lat}, Lng: ${alert.lng}'),
-                      const Text('Timestamp unavailable'),
+                      const SizedBox(height: 4),
+                      Wrap(
+                        spacing: 8,
+                        children: [
+                          Chip(
+                            label: Text(
+                              alert.status.toUpperCase(),
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            backgroundColor: _statusColor(alert.status),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        alert.createdAt != null
+                            ? 'Created: ${alert.createdAt!.toDate()}'
+                            : 'Created: unavailable',
+                      ),
+                      if (alert.acknowledgedAt != null)
+                        Text('Acknowledged: ${alert.acknowledgedAt!.toDate()}'),
+                      if (alert.resolvedAt != null)
+                        Text('Resolved: ${alert.resolvedAt!.toDate()}'),
                     ],
                   ),
                 ),

@@ -10,6 +10,12 @@ class DeviceModel {
   final bool sosActive;
   final Timestamp? lastUpdated;
 
+  // Safe zone
+  final String? safeZoneName;
+  final double? safeZoneLat;
+  final double? safeZoneLng;
+  final double? safeZoneRadius;
+
   DeviceModel({
     required this.id,
     required this.userName,
@@ -19,9 +25,15 @@ class DeviceModel {
     required this.batteryLevel,
     required this.sosActive,
     required this.lastUpdated,
+    required this.safeZoneName,
+    required this.safeZoneLat,
+    required this.safeZoneLng,
+    required this.safeZoneRadius,
   });
 
   factory DeviceModel.fromFirestore(String id, Map<String, dynamic> data) {
+    final safeZone = data['safeZone'] as Map<String, dynamic>?;
+
     return DeviceModel(
       id: id,
       userName: data['userName'] ?? 'Unknown',
@@ -31,6 +43,16 @@ class DeviceModel {
       batteryLevel: (data['batteryLevel'] ?? 0).toInt(),
       sosActive: data['sosActive'] ?? false,
       lastUpdated: data['lastUpdated'],
+      safeZoneName: safeZone?['name'],
+      safeZoneLat: safeZone?['lat'] != null
+          ? (safeZone!['lat'] as num).toDouble()
+          : null,
+      safeZoneLng: safeZone?['lng'] != null
+          ? (safeZone!['lng'] as num).toDouble()
+          : null,
+      safeZoneRadius: safeZone?['radius'] != null
+          ? (safeZone!['radius'] as num).toDouble()
+          : null,
     );
   }
 }

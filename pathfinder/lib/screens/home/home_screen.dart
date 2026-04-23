@@ -1,7 +1,7 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/device_model.dart';
-import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
 import '../alerts/sos_alert_screen.dart';
 import '../tracking/live_tracking_screen.dart';
@@ -19,82 +19,202 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool _sosScreenOpen = false;
+  bool _sosAlreadyHandled = false;
+  String? _lastHandledSosDeviceId;
 
-  Future<void> _logout(BuildContext context) async {
-    await AuthService().signOut();
+  bool _lowBatteryHandled = false;
+  bool _safeZoneHandled = false;
 
-    if (!context.mounted) return;
+  double _distanceInMeters(
+    double lat1,
+    double lng1,
+    double lat2,
+    double lng2,
+  ) {
+    const double earthRadius = 6371000;
 
-    Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
+    final dLat = (lat2 - lat1) * pi / 180;
+    final dLng = (lng2 - lng1) * pi / 180;
+
+    final a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(lat1 * pi / 180) *
+            cos(lat2 * pi / 180) *
+            sin(dLng / 2) *
+            sin(dLng / 2);
+
+    final c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    return earthRadius * c;
   }
 
   void _checkAndOpenSos(DeviceModel device) {
     if (!mounted) return;
+
     if (!device.sosActive) {
+      NotificationService.cancelSosNotification();
       _sosScreenOpen = false;
+      _sosAlreadyHandled = false;
+      _lastHandledSosDeviceId = null;
+      return;
+    }
+
+    if (_sosAlreadyHandled && _lastHandledSosDeviceId == device.id) {
       return;
     }
 
     if (_sosScreenOpen) return;
 
     _sosScreenOpen = true;
+    _sosAlreadyHandled = true;
+    _lastHandledSosDeviceId = device.id;
 
     Future.microtask(() async {
-      await FirestoreService().createSosAlert(
-        deviceId: device.id,
-        userName: device.userName,
-        lat: device.gpsLat,
-        lng: device.gpsLng,
-        batteryLevel: device.batteryLevel,
-      );
-
-      await NotificationService.showSosNotification(
-        title: 'SOS Alert',
-        body: '${device.userName} has triggered an emergency alert.',
-      );
-
-      if (!mounted) return;
-
-      final shouldOpen = await showDialog<bool>(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('SOS Alert'),
-            content: Text(
-              '${device.userName} has triggered an emergency alert.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Later'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Open'),
-              ),
-            ],
-          );
-        },
-      );
-
-      if (shouldOpen == true && mounted) {
-        await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => SosAlertScreen(
-              deviceId: device.id,
-              userName: device.userName,
-              lat: device.gpsLat,
-              lng: device.gpsLng,
-              batteryLevel: device.batteryLevel,
-              sosActive: device.sosActive,
-            ),
-          ),
+      try {
+        await FirestoreService().createSosAlert(
+          deviceId: device.id,
+          userName: device.userName,
+          lat: device.gpsLat,
+          lng: device.gpsLng,
+          batteryLevel: device.batteryLevel,
         );
-      }
 
-      if (mounted) {
-        _sosScreenOpen = false;
+        await NotificationService.showSosNotification(
+          title: 'SOS Alert',
+          body: '${device.userName} has triggered an emergency alert.',
+        );
+
+        if (!mounted) return;
+
+        final shouldOpen = await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('SOS Alert'),
+              content: Text(
+                '${device.userName} has triggered an emergency alert.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Later'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Open'),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (shouldOpen == true && mounted) {
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => SosAlertScreen(
+                deviceId: device.id,
+                userName: device.userName,
+                lat: device.gpsLat,
+                lng: device.gpsLng,
+                batteryLevel: device.batteryLevel,
+                sosActive: device.sosActive,
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('SOS handling error: $e');
+      } finally {
+        if (mounted) {
+          _sosScreenOpen = false;
+        }
+      }
+    });
+  }
+
+  void _checkLowBattery(DeviceModel device) {
+    if (!mounted) return;
+
+    if (device.batteryLevel >= 20) {
+      _lowBatteryHandled = false;
+      FirestoreService().resolveActiveAlertsByType(
+        deviceId: device.id,
+        type: 'low_battery',
+      );
+      return;
+    }
+
+    if (_lowBatteryHandled) return;
+    _lowBatteryHandled = true;
+
+    Future.microtask(() async {
+      try {
+        await FirestoreService().createLowBatteryAlert(
+          deviceId: device.id,
+          userName: device.userName,
+          lat: device.gpsLat,
+          lng: device.gpsLng,
+          batteryLevel: device.batteryLevel,
+        );
+
+        await NotificationService.showSosNotification(
+          title: 'Low Battery Alert',
+          body:
+              '${device.userName} device battery is low (${device.batteryLevel}%).',
+        );
+      } catch (e) {
+        debugPrint('Low battery alert error: $e');
+      }
+    });
+  }
+
+  void _checkSafeZone(DeviceModel device) {
+    if (!mounted) return;
+
+    if (device.safeZoneLat == null ||
+        device.safeZoneLng == null ||
+        device.safeZoneRadius == null) {
+      _safeZoneHandled = false;
+      return;
+    }
+
+    final distance = _distanceInMeters(
+      device.gpsLat,
+      device.gpsLng,
+      device.safeZoneLat!,
+      device.safeZoneLng!,
+    );
+
+    final isOutside = distance > device.safeZoneRadius!;
+
+    if (!isOutside) {
+      _safeZoneHandled = false;
+      FirestoreService().resolveActiveAlertsByType(
+        deviceId: device.id,
+        type: 'safe_zone_exit',
+      );
+      return;
+    }
+
+    if (_safeZoneHandled) return;
+    _safeZoneHandled = true;
+
+    Future.microtask(() async {
+      try {
+        await FirestoreService().createSafeZoneExitAlert(
+          deviceId: device.id,
+          userName: device.userName,
+          lat: device.gpsLat,
+          lng: device.gpsLng,
+          batteryLevel: device.batteryLevel,
+        );
+
+        await NotificationService.showSosNotification(
+          title: 'Safe Zone Alert',
+          body:
+              '${device.userName} has exited the safe zone "${device.safeZoneName ?? 'Safe Zone'}".',
+        );
+      } catch (e) {
+        debugPrint('Safe zone alert error: $e');
       }
     });
   }
@@ -154,12 +274,6 @@ class _HomeScreenState extends State<HomeScreen> {
           return Scaffold(
             appBar: AppBar(
               title: const Text("PathFinder Dashboard"),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.logout),
-                  onPressed: () => _logout(context),
-                ),
-              ],
             ),
             body: Center(
               child: Text('Error: ${deviceIdSnapshot.error}'),
@@ -171,13 +285,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text("PathFinder Dashboard"),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.logout),
-                onPressed: () => _logout(context),
-              ),
-            ],
+            title: const Text("PathFinder"),
           ),
           body: StreamBuilder<DeviceModel>(
             stream: firestoreService.getDeviceStream(deviceId),
@@ -192,6 +300,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
               final device = snapshot.data!;
               _checkAndOpenSos(device);
+              _checkLowBattery(device);
+              _checkSafeZone(device);
+
+              final hasSafeZone = device.safeZoneLat != null &&
+                  device.safeZoneLng != null &&
+                  device.safeZoneRadius != null;
 
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
@@ -215,7 +329,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 20),
                     const Text(
                       "Device Status",
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 10),
                     Card(
@@ -235,12 +350,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 12),
                     Card(
                       child: ListTile(
-                        leading: const Icon(Icons.location_on, color: Colors.blue),
+                        leading:
+                            const Icon(Icons.location_on, color: Colors.blue),
                         title: const Text("Last Known Location"),
                         subtitle:
                             Text("Lat: ${device.gpsLat}, Lng: ${device.gpsLng}"),
                       ),
                     ),
+                    if (hasSafeZone) ...[
+                      const SizedBox(height: 12),
+                      Card(
+                        child: ListTile(
+                          leading: const Icon(Icons.home, color: Colors.teal),
+                          title: Text(
+                            'Safe Zone: ${device.safeZoneName ?? 'Safe Zone'}',
+                          ),
+                          subtitle: Text(
+                            'Radius: ${device.safeZoneRadius!.toStringAsFixed(0)} m',
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     Card(
                       clipBehavior: Clip.antiAlias,
@@ -249,12 +379,20 @@ class _HomeScreenState extends State<HomeScreen> {
                           Positioned.fill(
                             child: FractionallySizedBox(
                               alignment: Alignment.centerLeft,
-                              widthFactor: (device.batteryLevel.clamp(0, 100) / 100),
-                              child: Container(color: Colors.green.shade100),
+                              widthFactor:
+                                  (device.batteryLevel.clamp(0, 100) / 100),
+                              child: Container(
+                                color: device.batteryLevel > 60
+                                    ? Colors.green.shade100
+                                    : device.batteryLevel > 30
+                                        ? Colors.orange.shade100
+                                        : Colors.red.shade100,
+                              ),
                             ),
                           ),
                           ListTile(
-                            leading: const Icon(Icons.battery_full, color: Colors.orange),
+                            leading: const Icon(Icons.battery_full,
+                                color: Colors.orange),
                             title: const Text("Battery Level"),
                             subtitle: Text("${device.batteryLevel}%"),
                           ),
@@ -271,14 +409,17 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         title: const Text("SOS Status"),
                         subtitle: Text(
-                          device.sosActive ? "Emergency Active" : "No active alerts",
+                          device.sosActive
+                              ? "Emergency Active"
+                              : "No active alerts",
                         ),
                       ),
                     ),
                     const SizedBox(height: 20),
                     const Text(
                       "Quick Actions",
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 10),
                     GridView.count(
@@ -296,7 +437,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => LiveTrackingScreen(deviceId: deviceId),
+                                builder: (_) =>
+                                    LiveTrackingScreen(deviceId: deviceId),
                               ),
                             );
                           },
@@ -309,7 +451,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => CameraFeedScreen(deviceId: deviceId),
+                                builder: (_) =>
+                                    CameraFeedScreen(deviceId: deviceId),
                               ),
                             );
                           },
@@ -342,7 +485,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (_) => AlertHistoryScreen(deviceId: deviceId),
+                                builder: (_) =>
+                                    AlertHistoryScreen(deviceId: deviceId),
                               ),
                             );
                           },
@@ -355,7 +499,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => SettingsScreen(deviceId: deviceId),
+                                builder: (_) =>
+                                    SettingsScreen(deviceId: deviceId),
                               ),
                             );
                           },

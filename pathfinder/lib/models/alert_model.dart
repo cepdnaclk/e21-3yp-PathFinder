@@ -9,7 +9,11 @@ class AlertModel {
   final double lng;
   final int batteryLevel;
   final String status;
-  final Timestamp? timestamp;
+  final Timestamp? createdAt;
+  final Timestamp? acknowledgedAt;
+  final Timestamp? resolvedAt;
+  final String? acknowledgedBy;
+  final String? notes;
 
   AlertModel({
     required this.id,
@@ -20,7 +24,11 @@ class AlertModel {
     required this.lng,
     required this.batteryLevel,
     required this.status,
-    required this.timestamp,
+    required this.createdAt,
+    required this.acknowledgedAt,
+    required this.resolvedAt,
+    required this.acknowledgedBy,
+    required this.notes,
   });
 
   factory AlertModel.fromFirestore(String id, Map<String, dynamic> data) {
@@ -33,7 +41,11 @@ class AlertModel {
       lng: (data['lng'] ?? 0).toDouble(),
       batteryLevel: (data['batteryLevel'] ?? 0).toInt(),
       status: data['status'] ?? 'unknown',
-      timestamp: data['timestamp'],
+      createdAt: data['createdAt'],
+      acknowledgedAt: data['acknowledgedAt'],
+      resolvedAt: data['resolvedAt'],
+      acknowledgedBy: data['acknowledgedBy'],
+      notes: data['notes'],
     );
   }
 }
