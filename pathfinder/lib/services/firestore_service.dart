@@ -134,6 +134,59 @@ class FirestoreService {
     }, SetOptions(merge: true));
   }
 
+  Future<void> addSafeZone({
+    required String deviceId,
+    required String name,
+    required double lat,
+    required double lng,
+    required double radius,
+  }) async {
+    final deviceRef = _firestore.collection('devices').doc(deviceId);
+    final doc = await deviceRef.get();
+    final data = doc.data() ?? {};
+
+    final List<dynamic> existing = (data['safeZones'] as List?) ?? [];
+
+    if (existing.length >= 3) {
+      throw Exception("Maximum 3 safe zones allowed");
+    }
+
+    existing.add({
+      'name': name,
+      'lat': lat,
+      'lng': lng,
+      'radius': radius,
+    });
+
+    await deviceRef.set({
+      'safeZones': existing,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> removeSafeZoneAt({
+    required String deviceId,
+    required int index,
+  }) async {
+    final deviceRef = _firestore.collection('devices').doc(deviceId);
+    final doc = await deviceRef.get();
+    final data = doc.data() ?? {};
+
+    final List<dynamic> existing =
+        List<dynamic>.from((data['safeZones'] as List?) ?? []);
+
+    if (index < 0 || index >= existing.length) {
+      throw Exception("Invalid safe zone index");
+    }
+
+    existing.removeAt(index);
+
+    await deviceRef.set({
+      'safeZones': existing,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
   // ==============================
   // ALERTS
   // ==============================
@@ -288,6 +341,15 @@ class FirestoreService {
       'status': 'resolved',
       'resolvedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+  }
+
+  Future<void> clearSosState(String deviceId) async {
+    await _firestore.collection('devices').doc(deviceId).set({
+      'sosActive': false,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    await resolveActiveAlertsByType(deviceId: deviceId, type: 'sos');
   }
 
   Stream<List<AlertModel>> getAlertHistoryStream(String deviceId) {

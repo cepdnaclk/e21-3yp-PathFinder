@@ -60,51 +60,21 @@ class _SosAlertScreenState extends State<SosAlertScreen> {
     return _firestoreService.getLatestActiveSosAlert(widget.deviceId);
   }
 
-  Future<void> _acknowledgeAlert() async {
+  Future<void> _turnOffSos() async {
     setState(() => _busy = true);
 
     try {
-      final alert = await _getCurrentAlert();
-      if (alert == null) {
-        throw Exception("No active SOS alert found");
-      }
-
-      await _firestoreService.acknowledgeAlert(alert.id);
+      await _firestoreService.clearSosState(widget.deviceId);
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Alert acknowledged')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to acknowledge alert: $e')),
-      );
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  Future<void> _resolveAlert() async {
-    setState(() => _busy = true);
-
-    try {
-      final alert = await _getCurrentAlert();
-      if (alert == null) {
-        throw Exception("No active SOS alert found");
-      }
-
-      await _firestoreService.resolveAlert(alert.id);
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Alert marked as resolved')),
+        const SnackBar(content: Text('SOS deactivated')),
       );
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to resolve alert: $e')),
+        SnackBar(content: Text('Failed to deactivate SOS: $e')),
       );
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -123,13 +93,114 @@ class _SosAlertScreenState extends State<SosAlertScreen> {
     }
   }
 
+  Widget _infoMiniCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color iconColor,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: iconColor, size: 30),
+            const SizedBox(height: 10),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade700,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _callActionCard({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String subtitle,
+    required VoidCallback? onTap,
+  }) {
+    return Expanded(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Ink(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 32),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade700,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final Color mainColor = widget.sosActive ? Colors.red : Colors.green;
     final Color lightColor =
         widget.sosActive ? Colors.red.shade100 : Colors.green.shade100;
-    final String heading =
-        widget.sosActive ? 'EMERGENCY ALERT IS ACTIVE' : 'EMERGENCY ALERT IS INACTIVE';
+    final String heading = widget.sosActive
+        ? 'EMERGENCY ALERT IS ACTIVE'
+        : 'EMERGENCY ALERT IS INACTIVE';
 
     return Scaffold(
       appBar: AppBar(
@@ -137,142 +208,183 @@ class _SosAlertScreenState extends State<SosAlertScreen> {
         backgroundColor: mainColor,
         foregroundColor: Colors.white,
       ),
+      backgroundColor: Colors.grey.shade100,
       body: FutureBuilder<AlertModel?>(
         future: _getCurrentAlert(),
         builder: (context, snapshot) {
           final alert = snapshot.data;
-          final currentStatus = alert?.status ?? (widget.sosActive ? 'active' : 'resolved');
+          final currentStatus =
+              alert?.status ?? (widget.sosActive ? 'active' : 'resolved');
           final statusColor = _statusColor(currentStatus);
 
-          return Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: lightColor,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: mainColor, width: 2),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(
-                        widget.sosActive
-                            ? Icons.warning_amber_rounded
-                            : Icons.check_circle,
-                        size: 64,
-                        color: mainColor,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        heading,
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
+          return SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: lightColor,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: mainColor, width: 2),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          widget.sosActive
+                              ? Icons.warning_amber_rounded
+                              : Icons.check_circle,
+                          size: 64,
                           color: mainColor,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 12),
-                      Chip(
-                        label: Text(
-                          currentStatus.toUpperCase(),
-                          style: const TextStyle(color: Colors.white),
+                        const SizedBox(height: 12),
+                        Text(
+                          heading,
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: mainColor,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                        backgroundColor: statusColor,
+                        const SizedBox(height: 12),
+                        Chip(
+                          label: Text(
+                            currentStatus.toUpperCase(),
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                          backgroundColor: statusColor,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  Row(
+                    children: [
+                      _infoMiniCard(
+                        icon: Icons.person,
+                        label: "Tracked User",
+                        value: widget.userName,
+                        iconColor: Colors.blue,
+                      ),
+                      const SizedBox(width: 12),
+                      _infoMiniCard(
+                        icon: Icons.battery_full,
+                        label: "Battery Level",
+                        value: "${widget.batteryLevel}%",
+                        iconColor: Colors.orange,
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 20),
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.person),
-                    title: Text(widget.userName),
-                    subtitle: const Text('Tracked user'),
+
+                  const SizedBox(height: 16),
+
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.06),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.location_on, color: mainColor, size: 30),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                "Emergency Location",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                "Lat: ${widget.lat}\nLng: ${widget.lng}",
+                                style: TextStyle(
+                                  color: Colors.grey.shade700,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                Card(
-                  child: ListTile(
-                    leading: Icon(Icons.location_on, color: mainColor),
-                    title: const Text('Location'),
-                    subtitle: Text('Lat: ${widget.lat}, Lng: ${widget.lng}'),
-                  ),
-                ),
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.battery_full, color: Colors.orange),
-                    title: const Text('Device Battery'),
-                    subtitle: Text('${widget.batteryLevel}%'),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Card(
-                  child: Column(
+
+                  const SizedBox(height: 24),
+
+                  Row(
                     children: [
-                      ListTile(
-                        leading: const Icon(Icons.phone, color: Colors.blue),
-                        title: const Text('Call User'),
-                        subtitle: const Text('Dial the tracked user'),
+                      _callActionCard(
+                        icon: Icons.phone,
+                        color: Colors.blue,
+                        title: "Call User",
+                        subtitle: "Contact tracked person",
                         onTap: _busy ? null : () => _callNumber('0712345678'),
                       ),
-                      const Divider(height: 1),
-                      ListTile(
-                        leading: const Icon(Icons.local_hospital, color: Colors.red),
-                        title: const Text('Call Emergency Services'),
-                        subtitle: const Text('Dial emergency services'),
+                      const SizedBox(width: 12),
+                      _callActionCard(
+                        icon: Icons.local_hospital,
+                        color: Colors.red,
+                        title: "Emergency",
+                        subtitle: "Call emergency services",
                         onTap: _busy ? null : () => _callNumber('119'),
                       ),
                     ],
                   ),
-                ),
-                const Spacer(),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: mainColor,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size.fromHeight(52),
-                    ),
-                    onPressed: _busy ? null : () => _openInMaps(context),
-                    icon: const Icon(Icons.map),
-                    label: const Text('Open in Maps'),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _busy || currentStatus != 'active'
-                            ? null
-                            : _acknowledgeAlert,
-                        icon: const Icon(Icons.check_circle_outline),
-                        label: const Text('Acknowledge'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: _busy ||
-                                (currentStatus != 'active' &&
-                                    currentStatus != 'acknowledged')
-                            ? null
-                            : _resolveAlert,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
+
+                  const SizedBox(height: 24),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: mainColor,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size.fromHeight(54),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
                         ),
-                        icon: const Icon(Icons.done_all),
-                        label: const Text('Resolved'),
                       ),
+                      onPressed: _busy ? null : () => _openInMaps(context),
+                      icon: const Icon(Icons.map),
+                      label: const Text('Open in Maps'),
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _busy || !widget.sosActive ? null : _turnOffSos,
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(54),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                      ),
+                      icon: const Icon(Icons.power_settings_new),
+                      label: const Text('Set SOS Inactive'),
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },

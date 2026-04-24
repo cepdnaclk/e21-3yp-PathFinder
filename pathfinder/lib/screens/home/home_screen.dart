@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
 import '../../models/device_model.dart';
 import '../../services/firestore_service.dart';
 import '../alerts/sos_alert_screen.dart';
@@ -24,6 +26,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool _lowBatteryHandled = false;
   bool _safeZoneHandled = false;
+  bool _resolvingCity = false;
+  String? _resolvedCity;
+  String? _lastResolvedCoordinateKey;
 
   double _distanceInMeters(
     double lat1,
@@ -46,6 +51,76 @@ class _HomeScreenState extends State<HomeScreen> {
     return earthRadius * c;
   }
 
+  Future<void> _resolveCityName(double lat, double lng) async {
+    if (lat == 0 && lng == 0) {
+      if (!mounted) return;
+      setState(() {
+        _resolvedCity = 'Location unavailable';
+        _lastResolvedCoordinateKey = null;
+      });
+      return;
+    }
+
+    final coordinateKey =
+        '${lat.toStringAsFixed(4)},${lng.toStringAsFixed(4)}';
+    if (_lastResolvedCoordinateKey == coordinateKey || _resolvingCity) return;
+
+    _resolvingCity = true;
+    if (mounted) {
+      setState(() {
+        _resolvedCity = null;
+      });
+    }
+
+    try {
+      final uri = Uri.https('nominatim.openstreetmap.org', '/reverse', {
+        'format': 'jsonv2',
+        'lat': lat.toString(),
+        'lon': lng.toString(),
+        'zoom': '10',
+        'addressdetails': '1',
+      });
+
+      final response = await http.get(
+        uri,
+        headers: {'User-Agent': 'PathFinder/1.0'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final address = (data['address'] as Map?)?.cast<String, dynamic>();
+        final city = address?['city'] ??
+            address?['town'] ??
+            address?['village'] ??
+            address?['municipality'] ??
+            address?['state_district'] ??
+            address?['state'];
+
+        if (!mounted) return;
+        setState(() {
+          _resolvedCity = (city?.toString().isNotEmpty ?? false)
+              ? city.toString()
+              : 'City unavailable';
+          _lastResolvedCoordinateKey = coordinateKey;
+        });
+      } else {
+        if (!mounted) return;
+        setState(() {
+          _resolvedCity = 'City unavailable';
+          _lastResolvedCoordinateKey = coordinateKey;
+        });
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _resolvedCity = 'City unavailable';
+        _lastResolvedCoordinateKey = coordinateKey;
+      });
+    } finally {
+      _resolvingCity = false;
+    }
+  }
+
   void _checkAndOpenSos(DeviceModel device) {
     if (!mounted) return;
 
@@ -57,10 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    if (_sosAlreadyHandled && _lastHandledSosDeviceId == device.id) {
-      return;
-    }
-
+    if (_sosAlreadyHandled && _lastHandledSosDeviceId == device.id) return;
     if (_sosScreenOpen) return;
 
     _sosScreenOpen = true;
@@ -170,23 +242,28 @@ class _HomeScreenState extends State<HomeScreen> {
   void _checkSafeZone(DeviceModel device) {
     if (!mounted) return;
 
-    if (device.safeZoneLat == null ||
-        device.safeZoneLng == null ||
-        device.safeZoneRadius == null) {
+    if (device.safeZones.isEmpty) {
       _safeZoneHandled = false;
       return;
     }
 
-    final distance = _distanceInMeters(
-      device.gpsLat,
-      device.gpsLng,
-      device.safeZoneLat!,
-      device.safeZoneLng!,
-    );
+    bool insideAnyZone = false;
 
-    final isOutside = distance > device.safeZoneRadius!;
+    for (final zone in device.safeZones) {
+      final distance = _distanceInMeters(
+        device.gpsLat,
+        device.gpsLng,
+        zone.lat,
+        zone.lng,
+      );
 
-    if (!isOutside) {
+      if (distance <= zone.radius) {
+        insideAnyZone = true;
+        break;
+      }
+    }
+
+    if (insideAnyZone) {
       _safeZoneHandled = false;
       FirestoreService().resolveActiveAlertsByType(
         deviceId: device.id,
@@ -210,34 +287,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
         await NotificationService.showSosNotification(
           title: 'Safe Zone Alert',
-          body:
-              '${device.userName} has exited the safe zone "${device.safeZoneName ?? 'Safe Zone'}".',
+          body: '${device.userName} has exited all safe zones.',
         );
       } catch (e) {
         debugPrint('Safe zone alert error: $e');
       }
     });
-  }
-
-  Widget _actionCard({
-    required IconData icon,
-    required String title,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 40, color: color),
-            const SizedBox(height: 10),
-            Text(title),
-          ],
-        ),
-      ),
-    );
   }
 
   Future<String> _getMyDeviceId() async {
@@ -254,6 +309,160 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return deviceId;
+  }
+
+  Widget _sectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _miniStatusCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color iconColor,
+    Color? backgroundColor,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: backgroundColor ?? Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: iconColor, size: 30),
+            const SizedBox(height: 10),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.grey.shade700,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _actionCard({
+    required IconData icon,
+    required String title,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(22),
+      onTap: onTap,
+      child: Ink(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 10),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 34, color: color),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _batteryCard(int batteryLevel) {
+    final level = batteryLevel.clamp(0, 100);
+    final factor = level / 100;
+
+    Color fillColor;
+    if (level > 60) {
+      fillColor = Colors.green.shade200;
+    } else if (level > 30) {
+      fillColor = Colors.orange.shade200;
+    } else {
+      fillColor = Colors.red.shade200;
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: factor,
+              child: Container(color: fillColor),
+            ),
+          ),
+          ListTile(
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            leading: const Icon(Icons.battery_full, color: Colors.orange),
+            title: const Text(
+              "Battery Level",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text("$level%"),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -284,8 +493,10 @@ class _HomeScreenState extends State<HomeScreen> {
         final deviceId = deviceIdSnapshot.data!;
 
         return Scaffold(
+          backgroundColor: Colors.grey.shade100,
           appBar: AppBar(
             title: const Text("PathFinder"),
+            centerTitle: true,
           ),
           body: StreamBuilder<DeviceModel>(
             stream: firestoreService.getDeviceStream(deviceId),
@@ -302,132 +513,237 @@ class _HomeScreenState extends State<HomeScreen> {
               _checkAndOpenSos(device);
               _checkLowBattery(device);
               _checkSafeZone(device);
+              _resolveCityName(device.gpsLat, device.gpsLng);
 
-              final hasSafeZone = device.safeZoneLat != null &&
-                  device.safeZoneLng != null &&
-                  device.safeZoneRadius != null;
+              final hasSafeZone = device.safeZones.isNotEmpty;
+              final locationLine = _resolvedCity == null
+                  ? (_resolvingCity
+                      ? 'City: Resolving...'
+                      : 'City: Unavailable')
+                  : 'City: $_resolvedCity';
 
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Card(
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundImage: user?.photoURL != null
-                              ? NetworkImage(user!.photoURL!)
-                              : null,
-                          child: user?.photoURL == null
-                              ? const Icon(Icons.person)
-                              : null,
-                        ),
-                        title: Text(user?.displayName ?? "Caretaker"),
-                        subtitle: Text(user?.email ?? ""),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      "Device Status",
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 10),
-                    Card(
-                      child: ListTile(
-                        leading: Icon(
-                          Icons.sensors,
-                          color: device.online ? Colors.green : Colors.red,
-                        ),
-                        title: Text(device.userName),
-                        subtitle: Text(device.online ? "Online" : "Offline"),
-                        trailing: Icon(
-                          device.online ? Icons.check_circle : Icons.cancel,
-                          color: device.online ? Colors.green : Colors.red,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Card(
-                      child: ListTile(
-                        leading:
-                            const Icon(Icons.location_on, color: Colors.blue),
-                        title: const Text("Last Known Location"),
-                        subtitle:
-                            Text("Lat: ${device.gpsLat}, Lng: ${device.gpsLng}"),
-                      ),
-                    ),
-                    if (hasSafeZone) ...[
-                      const SizedBox(height: 12),
-                      Card(
-                        child: ListTile(
-                          leading: const Icon(Icons.home, color: Colors.teal),
-                          title: Text(
-                            'Safe Zone: ${device.safeZoneName ?? 'Safe Zone'}',
+                    // Header card
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(26),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 14,
+                            offset: const Offset(0, 6),
                           ),
-                          subtitle: Text(
-                            'Radius: ${device.safeZoneRadius!.toStringAsFixed(0)} m',
-                          ),
-                        ),
+                        ],
                       ),
-                    ],
-                    const SizedBox(height: 12),
-                    Card(
-                      clipBehavior: Clip.antiAlias,
-                      child: Stack(
+                      child: Row(
                         children: [
-                          Positioned.fill(
-                            child: FractionallySizedBox(
-                              alignment: Alignment.centerLeft,
-                              widthFactor:
-                                  (device.batteryLevel.clamp(0, 100) / 100),
-                              child: Container(
-                                color: device.batteryLevel > 60
-                                    ? Colors.green.shade100
-                                    : device.batteryLevel > 30
-                                        ? Colors.orange.shade100
-                                        : Colors.red.shade100,
-                              ),
-                            ),
+                          CircleAvatar(
+                            radius: 28,
+                            backgroundImage: user?.photoURL != null
+                                ? NetworkImage(user!.photoURL!)
+                                : null,
+                            child: user?.photoURL == null
+                                ? const Icon(Icons.person, size: 28)
+                                : null,
                           ),
-                          ListTile(
-                            leading: const Icon(Icons.battery_full,
-                                color: Colors.orange),
-                            title: const Text("Battery Level"),
-                            subtitle: Text("${device.batteryLevel}%"),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  user?.displayName ?? "Caretaker",
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  user?.email ?? "",
+                                  style: TextStyle(
+                                    color: Colors.grey.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
+
+                    const SizedBox(height: 20),
+                    _sectionTitle("Overview"),
+
+                    Row(
+                      children: [
+                        _miniStatusCard(
+                          icon: Icons.sensors,
+                          label: "Device",
+                          value: device.online ? "Online" : "Offline",
+                          iconColor:
+                              device.online ? Colors.green : Colors.red,
+                        ),
+                        const SizedBox(width: 12),
+                        _miniStatusCard(
+                          icon: Icons.person_pin_circle,
+                          label: "Tracked User",
+                          value: device.userName,
+                          iconColor: Colors.blue,
+                        ),
+                      ],
+                    ),
+
                     const SizedBox(height: 12),
-                    Card(
-                      color: device.sosActive ? Colors.red.shade50 : null,
-                      child: ListTile(
-                        leading: Icon(
-                          Icons.warning,
-                          color: device.sosActive ? Colors.red : Colors.grey,
+
+                    Row(
+                      children: [
+                        _miniStatusCard(
+                          icon: Icons.warning,
+                          label: "SOS Status",
+                          value: device.sosActive ? "Active" : "Inactive",
+                          iconColor:
+                              device.sosActive ? Colors.red : Colors.grey,
+                          backgroundColor:
+                              device.sosActive ? Colors.red.shade50 : null,
                         ),
-                        title: const Text("SOS Status"),
-                        subtitle: Text(
-                          device.sosActive
-                              ? "Emergency Active"
-                              : "No active alerts",
+                        const SizedBox(width: 12),
+                        _miniStatusCard(
+                          icon: Icons.devices,
+                          label: "Device ID",
+                          value: deviceId,
+                          iconColor: Colors.deepPurple,
                         ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Location card
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(22),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 12,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.location_on,
+                              color: Colors.blue, size: 30),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  "Last Known Location",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  locationLine,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "Lat: ${device.gpsLat}\nLng: ${device.gpsLng}",
+                                  style: TextStyle(
+                                    color: Colors.grey.shade700,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      "Quick Actions",
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 10),
+
+                    if (hasSafeZone) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(22),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 12,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.home,
+                                color: Colors.teal, size: 28),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    "Safe Zones",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ...device.safeZones.map(
+                                    (zone) => Padding(
+                                      padding:
+                                          const EdgeInsets.only(bottom: 6),
+                                      child: Text(
+                                        "${zone.name} • Radius: ${zone.radius.toStringAsFixed(0)} m",
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 16),
+                    _batteryCard(device.batteryLevel),
+
+                    const SizedBox(height: 24),
+                    _sectionTitle("Quick Actions"),
+
                     GridView.count(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       crossAxisCount: 2,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1.1,
                       children: [
                         _actionCard(
                           icon: Icons.location_on,
@@ -459,7 +775,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         _actionCard(
                           icon: Icons.warning,
-                          title: "SOS Alerts",
+                          title: "SOS Alert",
                           color: Colors.red,
                           onTap: () {
                             Navigator.push(

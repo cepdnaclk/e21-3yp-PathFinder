@@ -1,5 +1,37 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+class SafeZoneModel {
+  final String name;
+  final double lat;
+  final double lng;
+  final double radius;
+
+  SafeZoneModel({
+    required this.name,
+    required this.lat,
+    required this.lng,
+    required this.radius,
+  });
+
+  factory SafeZoneModel.fromMap(Map<String, dynamic> data) {
+    return SafeZoneModel(
+      name: data['name'] ?? 'Safe Zone',
+      lat: (data['lat'] ?? 0).toDouble(),
+      lng: (data['lng'] ?? 0).toDouble(),
+      radius: (data['radius'] ?? 100).toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'lat': lat,
+      'lng': lng,
+      'radius': radius,
+    };
+  }
+}
+
 class DeviceModel {
   final String id;
   final String userName;
@@ -9,12 +41,7 @@ class DeviceModel {
   final int batteryLevel;
   final bool sosActive;
   final Timestamp? lastUpdated;
-
-  // Safe zone
-  final String? safeZoneName;
-  final double? safeZoneLat;
-  final double? safeZoneLng;
-  final double? safeZoneRadius;
+  final List<SafeZoneModel> safeZones;
 
   DeviceModel({
     required this.id,
@@ -25,14 +52,11 @@ class DeviceModel {
     required this.batteryLevel,
     required this.sosActive,
     required this.lastUpdated,
-    required this.safeZoneName,
-    required this.safeZoneLat,
-    required this.safeZoneLng,
-    required this.safeZoneRadius,
+    required this.safeZones,
   });
 
   factory DeviceModel.fromFirestore(String id, Map<String, dynamic> data) {
-    final safeZone = data['safeZone'] as Map<String, dynamic>?;
+    final safeZonesRaw = (data['safeZones'] as List?) ?? [];
 
     return DeviceModel(
       id: id,
@@ -43,16 +67,9 @@ class DeviceModel {
       batteryLevel: (data['batteryLevel'] ?? 0).toInt(),
       sosActive: data['sosActive'] ?? false,
       lastUpdated: data['lastUpdated'],
-      safeZoneName: safeZone?['name'],
-      safeZoneLat: safeZone?['lat'] != null
-          ? (safeZone!['lat'] as num).toDouble()
-          : null,
-      safeZoneLng: safeZone?['lng'] != null
-          ? (safeZone!['lng'] as num).toDouble()
-          : null,
-      safeZoneRadius: safeZone?['radius'] != null
-          ? (safeZone!['radius'] as num).toDouble()
-          : null,
+      safeZones: safeZonesRaw
+          .map((e) => SafeZoneModel.fromMap(Map<String, dynamic>.from(e)))
+          .toList(),
     );
   }
 }
