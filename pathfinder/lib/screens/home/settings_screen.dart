@@ -4,7 +4,7 @@ import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
 import '../auth/login_screen.dart';
 import '../auth/link_device_screen.dart';
-import 'safe_zone_picker_screen.dart';
+
 
 class SettingsScreen extends StatefulWidget {
   final String deviceId;
@@ -134,85 +134,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _markSafeZone() async {
-    final safeZones = List<dynamic>.from((_deviceData?['safeZones'] as List?) ?? []);
 
-    if (safeZones.length >= 3) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Maximum 3 safe zones allowed")),
-      );
-      return;
-    }
-
-    final lat = (_deviceData?['gpsLat'] ?? 0).toDouble();
-    final lng = (_deviceData?['gpsLng'] ?? 0).toDouble();
-
-    if (lat == 0 && lng == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Current device location is not available yet"),
-        ),
-      );
-      return;
-    }
-
-    final result = await Navigator.push<Map<String, dynamic>>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => SafeZonePickerScreen(
-          initialLat: lat,
-          initialLng: lng,
-        ),
-      ),
-    );
-
-    if (result == null) return;
-
-    try {
-      await _firestoreService.addSafeZone(
-        deviceId: widget.deviceId,
-        name: result['name'] as String,
-        lat: result['lat'] as double,
-        lng: result['lng'] as double,
-        radius: result['radius'] as double,
-      );
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Safe zone saved")),
-      );
-
-      await _loadSettingsData();
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to save safe zone: $e")),
-      );
-    }
-  }
-
-  Future<void> _removeSafeZone(int index) async {
-    try {
-      await _firestoreService.removeSafeZoneAt(
-        deviceId: widget.deviceId,
-        index: index,
-      );
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Safe zone removed")),
-      );
-
-      await _loadSettingsData();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to remove safe zone: $e")),
-      );
-    }
-  }
 
   Widget _infoCard({
     required IconData icon,
@@ -232,7 +154,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-    final safeZones = List<dynamic>.from((_deviceData?['safeZones'] as List?) ?? []);
 
     return Scaffold(
       appBar: AppBar(
@@ -295,55 +216,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         value: (_deviceData?['online'] == true) ? 'Online' : 'Offline',
                         iconColor: (_deviceData?['online'] == true) ? Colors.green : Colors.red,
                       ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        "Safe Zones",
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      if (safeZones.isNotEmpty)
-                        ...safeZones.asMap().entries.map((entry) {
-                          final index = entry.key;
-                          final zone = Map<String, dynamic>.from(entry.value);
 
-                          return Card(
-                            child: ListTile(
-                              leading: const Icon(Icons.home, color: Colors.teal),
-                              title: Text(zone['name']?.toString() ?? 'Safe Zone'),
-                              subtitle: Text(
-                                "Lat: ${zone['lat']}, Lng: ${zone['lng']}\nRadius: ${zone['radius']} m",
-                              ),
-                              isThreeLine: true,
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete_outline, color: Colors.orange),
-                                onPressed: () => _removeSafeZone(index),
-                              ),
-                            ),
-                          );
-                        })
-                      else
-                        const Card(
-                          child: ListTile(
-                            leading: Icon(Icons.location_off),
-                            title: Text("No safe zones set"),
-                          ),
-                        ),
                       const SizedBox(height: 24),
                       const Text(
                         "Actions",
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
-                      Card(
-                        child: ListTile(
-                          leading: const Icon(Icons.my_location, color: Colors.blue),
-                          title: const Text("Add Safe Zone"),
-                          subtitle: const Text(
-                            "Pick a safe zone on the map and set its radius",
-                          ),
-                          onTap: _markSafeZone,
-                        ),
-                      ),
+
                       Card(
                         child: ListTile(
                           leading: const Icon(Icons.sync_disabled, color: Colors.orange),
