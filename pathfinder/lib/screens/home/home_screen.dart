@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/device_model.dart';
 import '../../services/firestore_service.dart';
 import '../alerts/sos_alert_screen.dart';
@@ -10,6 +11,7 @@ import '../tracking/live_tracking_screen.dart';
 import '../../services/notification_service.dart';
 import '../alerts/alert_history_screen.dart';
 import 'settings_screen.dart';
+import 'safe_zone_picker_screen.dart';
 import '../tracking/camera_feed_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -415,6 +417,238 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _combinedAlertsCard({
+    required VoidCallback onSosTap,
+    required VoidCallback onHistoryTap,
+  }) {
+    Widget miniAction({
+      required IconData icon,
+      required String title,
+      required Color color,
+      required VoidCallback onTap,
+    }) {
+      return Expanded(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: Ink(
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, color: color, size: 20),
+                  const SizedBox(height: 6),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Ink(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Alerts",
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 10),
+            Expanded(
+              child: Row(
+                children: [
+                  miniAction(
+                    icon: Icons.warning,
+                    title: "SOS",
+                    color: Colors.red,
+                    onTap: onSosTap,
+                  ),
+                  const SizedBox(width: 8),
+                  miniAction(
+                    icon: Icons.history,
+                    title: "History",
+                    color: Colors.orange,
+                    onTap: onHistoryTap,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openSafeZonePicker({
+    required BuildContext context,
+    required DeviceModel device,
+    required String deviceId,
+  }) async {
+    if (device.safeZones.length >= 3) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Maximum 3 safe zones allowed')),
+      );
+      return;
+    }
+
+    if (device.gpsLat == 0 && device.gpsLng == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Current device location is not available yet'),
+        ),
+      );
+      return;
+    }
+
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SafeZonePickerScreen(
+          initialLat: device.gpsLat,
+          initialLng: device.gpsLng,
+        ),
+      ),
+    );
+
+    if (result == null) return;
+
+    try {
+      await FirestoreService().addSafeZone(
+        deviceId: deviceId,
+        name: result['name'] as String,
+        lat: result['lat'] as double,
+        lng: result['lng'] as double,
+        radius: result['radius'] as double,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Safe zone saved')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save safe zone: $e')),
+      );
+    }
+  }
+
+  Widget _combinedTrackingCard({
+    required VoidCallback onLiveTrackingTap,
+    required VoidCallback onAddSafeZoneTap,
+  }) {
+    Widget miniAction({
+      required IconData icon,
+      required String title,
+      required Color color,
+      required VoidCallback onTap,
+    }) {
+      return Expanded(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: Ink(
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, color: color, size: 20),
+                  const SizedBox(height: 6),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Ink(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Tracking',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 10),
+            Expanded(
+              child: Row(
+                children: [
+                  miniAction(
+                    icon: Icons.location_on,
+                    title: 'Live',
+                    color: Colors.blue,
+                    onTap: onLiveTrackingTap,
+                  ),
+                  const SizedBox(width: 8),
+                  miniAction(
+                    icon: Icons.add_location_alt,
+                    title: 'add safe zone',
+                    color: Colors.teal,
+                    onTap: onAddSafeZoneTap,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _batteryCard(int batteryLevel) {
     final level = batteryLevel.clamp(0, 100);
     final factor = level / 100;
@@ -464,6 +698,132 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  void _showSafeZonesDialog(
+    BuildContext context,
+    DeviceModel device,
+    String deviceId,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Safe Zones"),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: device.safeZones.length,
+              itemBuilder: (context, index) {
+                final zone = device.safeZones[index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () async {
+                      final googleMapsUrl =
+                          'https://www.google.com/maps/search/?api=1&query=${zone.lat},${zone.lng}';
+                      if (await canLaunchUrl(Uri.parse(googleMapsUrl))) {
+                        await launchUrl(Uri.parse(googleMapsUrl),
+                            mode: LaunchMode.externalApplication);
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.grey.shade200,
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  zone.name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "Radius: ${zone.radius.toStringAsFixed(0)} m",
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "Lat: ${zone.lat.toStringAsFixed(4)}, Lng: ${zone.lng.toStringAsFixed(4)}",
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  "Click to open in Google Maps",
+                                  style: TextStyle(
+                                    color: Colors.blue.shade600,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () async {
+                              Navigator.pop(context);
+                              try {
+                                await FirestoreService().removeSafeZoneAt(
+                                  deviceId: deviceId,
+                                  index: index,
+                                );
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Safe zone deleted'),
+                                  ),
+                                );
+                              } catch (e) {
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content:
+                                        Text('Failed to delete safe zone: $e'),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Close"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -682,51 +1042,56 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     if (hasSafeZone) ...[
                       const SizedBox(height: 16),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(22),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 12,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(Icons.home,
-                                color: Colors.teal, size: 28),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    "Safe Zones",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  ...device.safeZones.map(
-                                    (zone) => Padding(
-                                      padding:
-                                          const EdgeInsets.only(bottom: 6),
-                                      child: Text(
-                                        "${zone.name} • Radius: ${zone.radius.toStringAsFixed(0)} m",
+                      InkWell(
+                        borderRadius: BorderRadius.circular(22),
+                        onTap: () => _showSafeZonesDialog(context, device, deviceId),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(18),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(22),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 12,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.home,
+                                  color: Colors.teal, size: 28),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      "Safe Zones",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
                                       ),
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "Click to open",
+                                      style: TextStyle(
+                                        color: Colors.grey.shade600,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                              Icon(Icons.arrow_forward_ios, 
+                                  size: 16, 
+                                  color: Colors.grey.shade400),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -745,17 +1110,21 @@ class _HomeScreenState extends State<HomeScreen> {
                       mainAxisSpacing: 12,
                       childAspectRatio: 1.1,
                       children: [
-                        _actionCard(
-                          icon: Icons.location_on,
-                          title: "Live Tracking",
-                          color: Colors.blue,
-                          onTap: () {
+                        _combinedTrackingCard(
+                          onLiveTrackingTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) =>
                                     LiveTrackingScreen(deviceId: deviceId),
                               ),
+                            );
+                          },
+                          onAddSafeZoneTap: () {
+                            _openSafeZonePicker(
+                              context: context,
+                              device: device,
+                              deviceId: deviceId,
                             );
                           },
                         ),
@@ -773,11 +1142,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             );
                           },
                         ),
-                        _actionCard(
-                          icon: Icons.warning,
-                          title: "SOS Alert",
-                          color: Colors.red,
-                          onTap: () {
+                        _combinedAlertsCard(
+                          onSosTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -792,12 +1158,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             );
                           },
-                        ),
-                        _actionCard(
-                          icon: Icons.history,
-                          title: "Alert History",
-                          color: Colors.orange,
-                          onTap: () {
+                          onHistoryTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
