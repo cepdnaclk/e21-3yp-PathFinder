@@ -34,7 +34,8 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
     });
 
     try {
-      final deviceData = await FirestoreService().getDeviceData(widget.deviceId);
+      final deviceData =
+          await FirestoreService().getDeviceData(widget.deviceId);
 
       if (deviceData == null) {
         throw Exception("Device not found");
@@ -112,41 +113,36 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
   }) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(16),
+        constraints: const BoxConstraints(minHeight: 116),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: const Color(0xFFFFF1EC),
           borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 16,
-              offset: const Offset(0, 7),
-            ),
-          ],
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             CircleAvatar(
-              radius: 25,
-              backgroundColor: color.withOpacity(0.10),
+              radius: 23,
+              backgroundColor: Colors.white,
               child: Icon(icon, color: color),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Text(
               title,
               style: TextStyle(
                 color: Colors.grey.shade700,
                 fontWeight: FontWeight.w600,
-                fontSize: 13,
+                fontSize: 12,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 5),
             Text(
               value,
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 16,
+                fontSize: 15,
               ),
               textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
@@ -160,69 +156,50 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
   Widget _errorView() {
     return Padding(
       padding: const EdgeInsets.all(18),
-      child: Column(
-        children: [
-          const SizedBox(height: 80),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(32),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 18,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                CircleAvatar(
-                  radius: 42,
-                  backgroundColor: Colors.red.withOpacity(0.10),
-                  child: const Icon(
-                    Icons.videocam_off,
-                    size: 48,
-                    color: Colors.red,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Stream Unavailable',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _error ?? 'Unable to load camera stream.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey.shade700),
-                ),
-                const SizedBox(height: 18),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _loadCameraUrl,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Try Again'),
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(54),
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+      child: Center(
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 42,
+                backgroundColor: Colors.red.withOpacity(0.10),
+                child: const Icon(
+                  Icons.videocam_off,
+                  size: 48,
+                  color: Colors.red,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Stream Unavailable',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _error ?? 'Unable to load camera stream.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey.shade700),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -293,10 +270,15 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                                     Icon(
                                       Icons.circle,
                                       size: 10,
-                                      color: _online ? Colors.green : Colors.red,
+                                      color:
+                                          _online ? Colors.green : Colors.red,
                                     ),
                                     const SizedBox(width: 6),
-                                    Text(_online ? 'Device online' : 'Device offline'),
+                                    Text(
+                                      _online
+                                          ? 'Device online'
+                                          : 'Device offline',
+                                    ),
                                   ],
                                 ),
                               ],
@@ -319,66 +301,45 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
           ),
         ),
         const SizedBox(height: 10),
-        SizedBox(
-          height: 230,
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(
-                top: Radius.circular(32),
-              ),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(32),
             ),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Camera Overview',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
                 children: [
-                  const Text(
-                    'Camera Overview',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  _statusCard(
+                    icon: Icons.person_pin_circle,
+                    title: 'Tracked User',
+                    value: _userName,
+                    color: Colors.blue,
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      _statusCard(
-                        icon: Icons.person_pin_circle,
-                        title: 'Tracked User',
-                        value: _userName,
-                        color: Colors.blue,
-                      ),
-                      const SizedBox(width: 12),
-                      _statusCard(
-                        icon: Icons.sensors,
-                        title: 'Device',
-                        value: _online ? 'Online' : 'Offline',
-                        color: _online ? Colors.green : Colors.red,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _reloadStream,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Reload Stream'),
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(52),
-                        backgroundColor: Colors.purple,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                      ),
-                    ),
+                  const SizedBox(width: 12),
+                  _statusCard(
+                    icon: Icons.sensors,
+                    title: 'Device',
+                    value: _online ? 'Online' : 'Offline',
+                    color: _online ? Colors.green : Colors.red,
                   ),
                 ],
               ),
-            ),
+            ],
           ),
         ),
       ],
@@ -409,10 +370,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                     ),
                   ),
                   const Spacer(),
-                  _topButton(
-                    icon: Icons.refresh,
-                    onTap: _reloadStream,
-                  ),
+                  const SizedBox(width: 52),
                 ],
               ),
             ),

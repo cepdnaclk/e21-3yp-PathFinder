@@ -10,6 +10,46 @@ class AlertHistoryScreen extends StatelessWidget {
     required this.deviceId,
   });
 
+  Future<void> _clearHistory(BuildContext context) async {
+  final confirm = await showDialog<bool>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text("Clear History"),
+        content: const Text(
+          "Are you sure you want to delete ALL alert history?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Delete"),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (confirm != true) return;
+
+  try {
+    await FirestoreService().deleteAllAlerts(deviceId);
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Alert history cleared")),
+    );
+  } catch (e) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Failed: $e")),
+    );
+  }
+}
+
   Color _statusColor(String status) {
     switch (status) {
       case 'acknowledged':
@@ -289,7 +329,12 @@ class AlertHistoryScreen extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  const SizedBox(width: 52),
+
+                  // 🔥 NEW DELETE BUTTON
+                  _topButton(
+                    icon: Icons.delete_outline,
+                    onTap: () => _clearHistory(context),
+                  ),
                 ],
               ),
             ),
