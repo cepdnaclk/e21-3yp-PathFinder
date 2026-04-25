@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -59,10 +56,22 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyCfK45eoS-d0pxOrR16USzPsEnmuG8OEaw',
-    appId: '1:349312254099:ios:2eee9b35ec53d6cb6d4d66',
+    appId: '1:349312254099:ios:dc81cb68dcd7efdb6d4d66',
     messagingSenderId: '349312254099',
     projectId: 'pathfinder-e7869',
     storageBucket: 'pathfinder-e7869.firebasestorage.app',
-    iosBundleId: 'com.example.pathfinder',
+    androidClientId: '349312254099-l88skd0f3a934sh3jlc91rot2meto3jq.apps.googleusercontent.com',
+    iosClientId: '349312254099-11bvg1iia71plds3eqnjpq0uc5ebq4b1.apps.googleusercontent.com',
+    iosBundleId: 'com.pushpikaanuradha.pathfinder',
   );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyBIXM709MoJ92lVfOi5oZilaSluaAlOYnQ',
+    appId: '1:349312254099:web:8bb392bbb7531da86d4d66',
+    messagingSenderId: '349312254099',
+    projectId: 'pathfinder-e7869',
+    authDomain: 'pathfinder-e7869.firebaseapp.com',
+    storageBucket: 'pathfinder-e7869.firebasestorage.app',
+  );
+
 }
