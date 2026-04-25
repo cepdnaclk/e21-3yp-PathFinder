@@ -39,10 +39,10 @@
               "client_type": 3
             },
             {
-              "client_id": "349312254099-ltu07kuptfs4c6a8meu5cskarpj7671d.apps.googleusercontent.com",
+              "client_id": "349312254099-11bvg1iia71plds3eqnjpq0uc5ebq4b1.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.pathfinder"
+                "bundle_id": "com.pushpikaanuradha.pathfinder"
               }
             }
           ]

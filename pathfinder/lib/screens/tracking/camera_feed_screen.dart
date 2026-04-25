@@ -17,72 +17,9 @@ class CameraFeedScreen extends StatefulWidget {
 class _CameraFeedScreenState extends State<CameraFeedScreen> {
   bool _loading = true;
   String? _error;
-  String? _cameraStreamUrl;
   WebViewController? _controller;
   String _userName = 'Unknown';
   bool _online = false;
-
-  Widget _sectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _miniStatusCard({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color iconColor,
-    Color? backgroundColor,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: backgroundColor ?? Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 12,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: iconColor, size: 28),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.grey.shade700,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              value,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   @override
   void initState() {
@@ -97,8 +34,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
     });
 
     try {
-      final deviceData =
-          await FirestoreService().getDeviceData(widget.deviceId);
+      final deviceData = await FirestoreService().getDeviceData(widget.deviceId);
 
       if (deviceData == null) {
         throw Exception("Device not found");
@@ -129,7 +65,6 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
       if (!mounted) return;
 
       setState(() {
-        _cameraStreamUrl = url;
         _controller = controller;
         _userName = (deviceData['userName'] ?? 'Unknown').toString();
         _online = deviceData['online'] == true;
@@ -155,151 +90,343 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade100,
-      appBar: AppBar(
-        title: const Text("Live Camera Feed"),
-        centerTitle: true,
+  Widget _topButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return CircleAvatar(
+      radius: 26,
+      backgroundColor: Colors.white,
+      child: IconButton(
+        icon: Icon(icon, color: Colors.black87),
+        onPressed: onTap,
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
+    );
+  }
+
+  Widget _statusCard({
+    required IconData icon,
+    required String title,
+    required String value,
+    required Color color,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 7),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            CircleAvatar(
+              radius: 25,
+              backgroundColor: color.withOpacity(0.10),
+              child: Icon(icon, color: color),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              style: TextStyle(
+                color: Colors.grey.shade700,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _errorView() {
+    return Padding(
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        children: [
+          const SizedBox(height: 80),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                CircleAvatar(
+                  radius: 42,
+                  backgroundColor: Colors.red.withOpacity(0.10),
+                  child: const Icon(
+                    Icons.videocam_off,
+                    size: 48,
+                    color: Colors.red,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Stream Unavailable',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _error ?? 'Unable to load camera stream.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey.shade700),
+                ),
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _loadCameraUrl,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Try Again'),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(54),
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 12,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: Text(
-                        _error!,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.red),
                       ),
                     ),
                   ),
-                )
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _sectionTitle("Live Camera"),
-                    Container(
-                      width: double.infinity,
-                      height: 260,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _cameraView() {
+    return Column(
+      children: [
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(32),
+              child: Stack(
+                children: [
+                  Container(
+                    color: Colors.black,
+                    child: _controller == null
+                        ? const Center(
+                            child: Text(
+                              'No stream available',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          )
+                        : WebViewWidget(controller: _controller!),
+                  ),
+                  Positioned(
+                    top: 18,
+                    left: 18,
+                    right: 18,
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 12,
-                            offset: const Offset(0, 5),
+                            color: Colors.black.withOpacity(0.10),
+                            blurRadius: 18,
+                            offset: const Offset(0, 8),
                           ),
                         ],
                       ),
-                      clipBehavior: Clip.antiAlias,
-                      child: _controller == null
-                          ? const Center(child: Text("No stream available"))
-                          : WebViewWidget(controller: _controller!),
-                    ),
-                    const SizedBox(height: 16),
-                    _sectionTitle("Overview"),
-                    Row(
-                      children: [
-                        _miniStatusCard(
-                          icon: Icons.sensors,
-                          label: "Device",
-                          value: _online ? "Online" : "Offline",
-                          iconColor: _online ? Colors.green : Colors.red,
-                        ),
-                        const SizedBox(width: 12),
-                        _miniStatusCard(
-                          icon: Icons.videocam,
-                          label: "Stream",
-                          value: _cameraStreamUrl == null ? "Missing" : "Ready",
-                          iconColor: _cameraStreamUrl == null
-                              ? Colors.grey
-                              : Colors.blue,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        _miniStatusCard(
-                          icon: Icons.person_pin_circle,
-                          label: "Tracked User",
-                          value: _userName,
-                          iconColor: Colors.deepPurple,
-                        ),
-                        const SizedBox(width: 12),
-                        _miniStatusCard(
-                          icon: Icons.devices,
-                          label: "Device ID",
-                          value: widget.deviceId,
-                          iconColor: Colors.teal,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(22),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 12,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
                         children: [
-                          const Text(
-                            "Stream URL",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                          CircleAvatar(
+                            radius: 24,
+                            backgroundColor: Colors.purple.shade50,
+                            child: const Icon(
+                              Icons.videocam,
+                              color: Colors.purple,
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Text(_cameraStreamUrl ?? "Not available"),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Live Camera',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.circle,
+                                      size: 10,
+                                      color: _online ? Colors.green : Colors.red,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(_online ? 'Device online' : 'Device offline'),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: _reloadStream,
+                            icon: const Icon(
+                              Icons.refresh,
+                              color: Colors.purple,
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _reloadStream,
-                        icon: const Icon(Icons.refresh),
-                        label: const Text("Reload Stream"),
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size.fromHeight(52),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 230,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(32),
+              ),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Camera Overview',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      _statusCard(
+                        icon: Icons.person_pin_circle,
+                        title: 'Tracked User',
+                        value: _userName,
+                        color: Colors.blue,
+                      ),
+                      const SizedBox(width: 12),
+                      _statusCard(
+                        icon: Icons.sensors,
+                        title: 'Device',
+                        value: _online ? 'Online' : 'Offline',
+                        color: _online ? Colors.green : Colors.red,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _reloadStream,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Reload Stream'),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(52),
+                        backgroundColor: Colors.purple,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4D9DD),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 8, 18, 0),
+              child: Row(
+                children: [
+                  _topButton(
+                    icon: Icons.arrow_back,
+                    onTap: () => Navigator.pop(context),
+                  ),
+                  const Spacer(),
+                  const Text(
+                    'Live Camera',
+                    style: TextStyle(
+                      fontSize: 23,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  _topButton(
+                    icon: Icons.refresh,
+                    onTap: _reloadStream,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _error != null
+                      ? _errorView()
+                      : _cameraView(),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

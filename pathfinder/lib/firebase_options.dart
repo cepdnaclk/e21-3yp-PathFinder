@@ -4,34 +4,22 @@ import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
-/// Default [FirebaseOptions] for use with your Firebase apps.
-///
-/// Example:
-/// ```dart
-/// import 'firebase_options.dart';
-/// // ...
-/// await Firebase.initializeApp(
-///   options: DefaultFirebaseOptions.currentPlatform,
-/// );
-/// ```
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
-    if (kIsWeb) {
-      return web;
-    }
+    if (kIsWeb) return web;
+
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return android;
       case TargetPlatform.iOS:
         return ios;
-      case TargetPlatform.macOS:
-        return macos;
       case TargetPlatform.windows:
         return windows;
+      case TargetPlatform.macOS:
+        return ios;
       case TargetPlatform.linux:
         throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for linux - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
+          'DefaultFirebaseOptions have not been configured for linux.',
         );
       default:
         throw UnsupportedError(
@@ -54,8 +42,10 @@ class DefaultFirebaseOptions {
     messagingSenderId: '349312254099',
     projectId: 'pathfinder-e7869',
     storageBucket: 'pathfinder-e7869.firebasestorage.app',
-    androidClientId: '349312254099-l88skd0f3a934sh3jlc91rot2meto3jq.apps.googleusercontent.com',
-    iosClientId: '349312254099-11bvg1iia71plds3eqnjpq0uc5ebq4b1.apps.googleusercontent.com',
+    androidClientId:
+        '349312254099-l88skd0f3a934sh3jlc91rot2meto3jq.apps.googleusercontent.com',
+    iosClientId:
+        '349312254099-11bvg1iia71plds3eqnjpq0uc5ebq4b1.apps.googleusercontent.com',
     iosBundleId: 'com.pushpikaanuradha.pathfinder',
   );
 
@@ -68,17 +58,6 @@ class DefaultFirebaseOptions {
     storageBucket: 'pathfinder-e7869.firebasestorage.app',
   );
 
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyCfK45eoS-d0pxOrR16USzPsEnmuG8OEaw',
-    appId: '1:349312254099:ios:2eee9b35ec53d6cb6d4d66',
-    messagingSenderId: '349312254099',
-    projectId: 'pathfinder-e7869',
-    storageBucket: 'pathfinder-e7869.firebasestorage.app',
-    androidClientId: '349312254099-l88skd0f3a934sh3jlc91rot2meto3jq.apps.googleusercontent.com',
-    iosClientId: '349312254099-ltu07kuptfs4c6a8meu5cskarpj7671d.apps.googleusercontent.com',
-    iosBundleId: 'com.example.pathfinder',
-  );
-
   static const FirebaseOptions windows = FirebaseOptions(
     apiKey: 'AIzaSyBIXM709MoJ92lVfOi5oZilaSluaAlOYnQ',
     appId: '1:349312254099:web:7b0f0a9b6fa4cb266d4d66',
@@ -87,5 +66,4 @@ class DefaultFirebaseOptions {
     authDomain: 'pathfinder-e7869.firebaseapp.com',
     storageBucket: 'pathfinder-e7869.firebasestorage.app',
   );
-
 }
