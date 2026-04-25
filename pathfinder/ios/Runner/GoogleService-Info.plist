@@ -5,7 +5,11 @@
 	<key>CLIENT_ID</key>
 	<string>349312254099-11bvg1iia71plds3eqnjpq0uc5ebq4b1.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
+
 	<string>com.googleusercontent.apps.349312254099-11bvg1iia71plds3eqnjpq0uc5ebq4b1</string>
+
+	
+
 	<key>ANDROID_CLIENT_ID</key>
 	<string>349312254099-l88skd0f3a934sh3jlc91rot2meto3jq.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
