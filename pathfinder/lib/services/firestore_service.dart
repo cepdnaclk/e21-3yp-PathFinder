@@ -39,6 +39,21 @@ class FirestoreService {
     }, SetOptions(merge: true));
   }
 
+  Future<void> deleteAllAlerts(String deviceId) async {
+  final query = await FirebaseFirestore.instance
+      .collection('alerts')
+      .where('deviceId', isEqualTo: deviceId)
+      .get();
+
+  final batch = FirebaseFirestore.instance.batch();
+
+  for (final doc in query.docs) {
+    batch.delete(doc.reference);
+  }
+
+  await batch.commit();
+}
+
   Future<Map<String, dynamic>?> getDeviceData(String deviceId) async {
     final doc = await _firestore.collection('devices').doc(deviceId).get();
     return doc.data();
