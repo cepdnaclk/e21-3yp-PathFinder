@@ -27,6 +27,18 @@ class FirestoreService {
     return doc.data();
   }
 
+  Future<void> saveSosContactNumbers({
+    required String uid,
+    required String userContactNumber,
+    required String emergencyContactNumber,
+  }) async {
+    await _firestore.collection('caretakers').doc(uid).set({
+      'userContactNumber': userContactNumber,
+      'emergencyContactNumber': emergencyContactNumber,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
   Future<Map<String, dynamic>?> getDeviceData(String deviceId) async {
     final doc = await _firestore.collection('devices').doc(deviceId).get();
     return doc.data();

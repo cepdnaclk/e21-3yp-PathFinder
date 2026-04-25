@@ -1,8 +1,6 @@
-import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/device_model.dart';
 import '../../services/firestore_service.dart';
@@ -29,9 +27,6 @@ class _HomeScreenState extends State<HomeScreen>
 
   bool _lowBatteryHandled = false;
   bool _safeZoneHandled = false;
-  bool _resolvingCity = false;
-  String? _resolvedCity;
-  String? _lastResolvedCoordinateKey;
   AnimationController? _sosBlinkController;
 
   AnimationController _ensureSosBlinkController() {
@@ -72,76 +67,6 @@ class _HomeScreenState extends State<HomeScreen>
 
     final c = 2 * atan2(sqrt(a), sqrt(1 - a));
     return earthRadius * c;
-  }
-
-  Future<void> _resolveCityName(double lat, double lng) async {
-    if (lat == 0 && lng == 0) {
-      if (!mounted) return;
-      setState(() {
-        _resolvedCity = 'Location unavailable';
-        _lastResolvedCoordinateKey = null;
-      });
-      return;
-    }
-
-    final coordinateKey =
-        '${lat.toStringAsFixed(4)},${lng.toStringAsFixed(4)}';
-    if (_lastResolvedCoordinateKey == coordinateKey || _resolvingCity) return;
-
-    _resolvingCity = true;
-    if (mounted) {
-      setState(() {
-        _resolvedCity = null;
-      });
-    }
-
-    try {
-      final uri = Uri.https('nominatim.openstreetmap.org', '/reverse', {
-        'format': 'jsonv2',
-        'lat': lat.toString(),
-        'lon': lng.toString(),
-        'zoom': '10',
-        'addressdetails': '1',
-      });
-
-      final response = await http.get(
-        uri,
-        headers: {'User-Agent': 'PathFinder/1.0'},
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        final address = (data['address'] as Map?)?.cast<String, dynamic>();
-        final city = address?['city'] ??
-            address?['town'] ??
-            address?['village'] ??
-            address?['municipality'] ??
-            address?['state_district'] ??
-            address?['state'];
-
-        if (!mounted) return;
-        setState(() {
-          _resolvedCity = (city?.toString().isNotEmpty ?? false)
-              ? city.toString()
-              : 'City unavailable';
-          _lastResolvedCoordinateKey = coordinateKey;
-        });
-      } else {
-        if (!mounted) return;
-        setState(() {
-          _resolvedCity = 'City unavailable';
-          _lastResolvedCoordinateKey = coordinateKey;
-        });
-      }
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _resolvedCity = 'City unavailable';
-        _lastResolvedCoordinateKey = coordinateKey;
-      });
-    } finally {
-      _resolvingCity = false;
-    }
   }
 
   void _checkAndOpenSos(DeviceModel device) {
@@ -957,14 +882,8 @@ class _HomeScreenState extends State<HomeScreen>
               _checkAndOpenSos(device);
               _checkLowBattery(device);
               _checkSafeZone(device);
-              _resolveCityName(device.gpsLat, device.gpsLng);
 
               final hasSafeZone = device.safeZones.isNotEmpty;
-              final locationLine = _resolvedCity == null
-                  ? (_resolvingCity
-                      ? 'City: Resolving...'
-                      : 'City: Unavailable')
-                  : 'City: $_resolvedCity';
 
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
@@ -1135,11 +1054,6 @@ class _HomeScreenState extends State<HomeScreen>
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  locationLine,
-                                  style: const TextStyle(fontWeight: FontWeight.w600),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
                                   "Lat: ${device.gpsLat.toStringAsFixed(5)}, "
                                   "Lng: ${device.gpsLng.toStringAsFixed(5)}",
                                   style: TextStyle(color: Colors.grey.shade600),
@@ -1153,12 +1067,26 @@ class _HomeScreenState extends State<HomeScreen>
                             color: Colors.grey.shade300,
                           ),
                           const SizedBox(width: 10),
-                          Column(
-                            children: const [
-                              Icon(Icons.navigation, color: Colors.blue),
-                              SizedBox(height: 4),
-                              Text("Open", style: TextStyle(fontSize: 12)),
-                            ],
+                          InkWell(
+                            onTap: () async {
+                              final googleMapsUrl =
+                                  'https://www.google.com/maps/search/?api=1&query=${device.gpsLat},${device.gpsLng}';
+                              if (await canLaunchUrl(Uri.parse(googleMapsUrl))) {
+                                await launchUrl(Uri.parse(googleMapsUrl),
+                                    mode: LaunchMode.externalApplication);
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(8),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Column(
+                                children: const [
+                                  Icon(Icons.navigation, color: Colors.blue),
+                                  SizedBox(height: 4),
+                                  Text("Open", style: TextStyle(fontSize: 12)),
+                                ],
+                              ),
+                            ),
                           )
                         ],
                       ),
