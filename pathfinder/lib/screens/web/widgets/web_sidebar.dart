@@ -37,7 +37,8 @@ class WebSidebar extends StatelessWidget {
           const SizedBox(height: 42),
 
           _item(index: 0, icon: Icons.dashboard, title: 'Dashboard'),
-          _item(index: 1, icon: Icons.person, title: 'Account Info'),
+          _item(index: 1, icon: Icons.history, title: 'SOS History'),
+          _item(index: 2, icon: Icons.person, title: 'Account Info'),
 
           const Spacer(),
 

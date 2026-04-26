@@ -90,7 +90,7 @@ class WebDashboardPage extends StatelessWidget {
                   return false;
                 }).toList();
 
-                final bool sosActive = deviceData['sosActive'] == true || activeAlerts.isNotEmpty;
+                final bool sosActive = deviceData['sosActive'] == true;
                 final latestAlert =
                     sortedAlerts.isNotEmpty ? sortedAlerts.first.data() : null;
 
@@ -130,7 +130,7 @@ class WebDashboardPage extends StatelessWidget {
                         GridView.count(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          crossAxisCount: 3,
+                          crossAxisCount: 2,
                           crossAxisSpacing: 22,
                           mainAxisSpacing: 22,
                           childAspectRatio: 2.4,
@@ -144,9 +144,17 @@ class WebDashboardPage extends StatelessWidget {
                             WebStatCard(
                               icon: Icons.warning,
                               title: 'SOS Status',
-                              value: sosActive ? 'Active' : 'Inactive',
-                              color: sosActive ? Colors.red : Colors.orange,
+                              value: (deviceData['sosActive'] == true) ? 'Active' : 'Inactive',
+                              color: (deviceData['sosActive'] == true) ? Colors.red : Colors.green,
                               onTap: () {
+                                if (!sosActive) {
+                                    _showInfoDialog(
+                                      context,
+                                      title: 'SOS Status',
+                                      content: 'SOS is currently inactive. No emergency action is required.',
+                                    );
+                                    return;
+                                }
                                 if (latestAlert == null) {
                                   _showInfoDialog(
                                     context,
@@ -154,7 +162,7 @@ class WebDashboardPage extends StatelessWidget {
                                     content: 'No SOS alerts found.',
                                   );
                                 } else {
-                                  _showAlertDialog(context, latestAlert);
+                                  _showAlertDialog(context, latestAlert,deviceId);
                                 }
                               },
                             ),
@@ -206,23 +214,6 @@ class WebDashboardPage extends StatelessWidget {
                               onTap: cameraStreamUrl.isNotEmpty
                                   ? () => _openUrl(cameraStreamUrl)
                                   : null,
-                            ),
-                            _ActionCard(
-                              icon: Icons.notifications_active,
-                              title: 'Recent SOS Alerts',
-                              subtitle: latestAlert == null
-                                  ? 'No SOS alerts found'
-                                  : sosActive
-                                      ? 'Active alert available'
-                                      : 'Last alert available',
-                              color: sosActive ? Colors.red : Colors.orange,
-                              buttonText: 'View Latest Alert',
-                              onTap: latestAlert == null
-                                  ? null
-                                  : () => _showAlertDialog(
-                                        context,
-                                        latestAlert,
-                                      ),
                             ),
                           ],
                         ),
@@ -295,30 +286,134 @@ class WebDashboardPage extends StatelessWidget {
     );
   }
 
-  void _showAlertDialog(
-    BuildContext context,
-    Map<String, dynamic> alert,
-  ) {
-    final type = alert['type']?.toString() ?? 'SOS Alert';
-    final deviceId = alert['deviceId']?.toString() ?? '-';
-    final userName = alert['userName']?.toString() ?? '-';
-    final batteryLevel = alert['batteryLevel']?.toString() ?? '-';
-    final lat = alert['lat']?.toString() ?? '-';
-    final lng = alert['lng']?.toString() ?? '-';
-    final createdAt = alert['createdAt'];
+void _showAlertDialog(
+  BuildContext context,
+  Map<String, dynamic> alert,
+  String deviceId,
+) {
+  final type = alert['type']?.toString().toUpperCase() ?? 'SOS';
+  final userName = alert['userName']?.toString() ?? 'Unknown user';
+  final batteryLevel = alert['batteryLevel']?.toString() ?? '-';
+  final lat = _toDouble(alert['lat']);
+  final lng = _toDouble(alert['lng']);
+  final createdAt = alert['createdAt'] ?? alert['timestamp'];
 
-    _showInfoDialog(
-      context,
-      title: type.toUpperCase(),
-      content:
-          'Device ID: $deviceId\n'
-          'User: $userName\n'
-          'Battery: $batteryLevel%\n'
-          'Latitude: $lat\n'
-          'Longitude: $lng\n'
-          'Time: ${createdAt is Timestamp ? createdAt.toDate() : "Unavailable"}',
-    );
-  }
+  showDialog(
+    context: context,
+    builder: (_) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(28),
+        ),
+        title: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: Colors.red.withOpacity(0.12),
+              child: const Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.red,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Text(type),
+          ],
+        ),
+        content: SizedBox(
+          width: 420,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _dialogRow(Icons.person, 'User', userName),
+              _dialogRow(Icons.devices, 'Device', deviceId),
+              _dialogRow(Icons.battery_full, 'Battery', '$batteryLevel%'),
+              _dialogRow(
+                Icons.access_time,
+                'Time',
+                createdAt is Timestamp
+                    ? createdAt.toDate().toString()
+                    : 'Unavailable',
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: lat != 0 && lng != 0
+                      ? () => _openGoogleMaps(lat, lng)
+                      : null,
+                  icon: const Icon(Icons.map),
+                  label: const Text('Open Location in Google Maps'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () async {
+                    await FirebaseFirestore.instance
+                        .collection('devices')
+                        .doc(deviceId)
+                        .update({'sosActive': false});
+
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('SOS marked as notified'),
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.check_circle),
+                  label: const Text('Notified - Set SOS Inactive'),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+Widget _dialogRow(IconData icon, String label, String value) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 20, color: Colors.blueGrey),
+        const SizedBox(width: 10),
+        SizedBox(
+          width: 80,
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.black54,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   void _showInfoDialog(
     BuildContext context, {
@@ -429,15 +524,19 @@ class _ActionCardState extends State<_ActionCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 34,
-                  backgroundColor: widget.color.withOpacity(0.14),
-                  child: Icon(
-                    widget.icon,
-                    color: widget.color,
-                    size: 34,
-                  ),
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: widget.color.withOpacity(0.10),
+                  borderRadius: BorderRadius.circular(14),
                 ),
+                child: Icon(
+                  widget.icon,
+                  color: widget.color,
+                  size: 22,
+                ),
+              ),
                 const Spacer(),
                 Text(
                   widget.title,
