@@ -19,8 +19,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
-    with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   bool _sosScreenOpen = false;
   bool _sosAlreadyHandled = false;
   String? _lastHandledSosDeviceId;
@@ -48,18 +47,14 @@ class _HomeScreenState extends State<HomeScreen>
     super.dispose();
   }
 
-  double _distanceInMeters(
-    double lat1,
-    double lng1,
-    double lat2,
-    double lng2,
-  ) {
+  double _distanceInMeters(double lat1, double lng1, double lat2, double lng2) {
     const double earthRadius = 6371000;
 
     final dLat = (lat2 - lat1) * pi / 180;
     final dLng = (lng2 - lng1) * pi / 180;
 
-    final a = sin(dLat / 2) * sin(dLat / 2) +
+    final a =
+        sin(dLat / 2) * sin(dLat / 2) +
         cos(lat1 * pi / 180) *
             cos(lat2 * pi / 180) *
             sin(dLng / 2) *
@@ -264,10 +259,7 @@ class _HomeScreenState extends State<HomeScreen>
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         title,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-        ),
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -309,10 +301,7 @@ class _HomeScreenState extends State<HomeScreen>
           const SizedBox(height: 6),
           Text(
             value,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             textAlign: TextAlign.center,
           ),
         ],
@@ -361,9 +350,7 @@ class _HomeScreenState extends State<HomeScreen>
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -372,9 +359,7 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _combinedAlertsCard({
-    required VoidCallback onHistoryTap,
-  }) {
+  Widget _combinedAlertsCard({required VoidCallback onHistoryTap}) {
     Widget miniAction({
       required IconData icon,
       required String title,
@@ -430,10 +415,7 @@ class _HomeScreenState extends State<HomeScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Alerts",
-              style: TextStyle(fontWeight: FontWeight.w700),
-            ),
+            const Text("Alerts", style: TextStyle(fontWeight: FontWeight.w700)),
             const SizedBox(height: 10),
             Expanded(
               child: Row(
@@ -496,14 +478,14 @@ class _HomeScreenState extends State<HomeScreen>
       );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Safe zone saved')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Safe zone saved')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to save safe zone: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to save safe zone: $e')));
     }
   }
 
@@ -596,14 +578,17 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _batteryCard(int batteryLevel) {
+  Widget _batteryCard(int batteryLevel, {required bool isCharging}) {
     final level = batteryLevel.clamp(0, 100);
     final progress = level / 100;
 
     Color progressColor;
     String status;
 
-    if (level > 60) {
+    if (isCharging) {
+      progressColor = Colors.blue;
+      status = "Charging";
+    } else if (level > 60) {
       progressColor = Colors.green;
       status = "Good";
     } else if (level > 30) {
@@ -632,13 +617,9 @@ class _HomeScreenState extends State<HomeScreen>
         children: [
           const Text(
             "Battery Status",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-
           SizedBox(
             width: 250,
             height: 155,
@@ -661,24 +642,35 @@ class _HomeScreenState extends State<HomeScreen>
                           height: 1.0,
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      const Text(
-                        "Battery Remaining",
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          height: 1.0,
+                      if (!isCharging) ...[
+                        const SizedBox(height: 6),
+                        const Text(
+                          "Battery Remaining",
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            height: 1.0,
+                          ),
                         ),
-                      ),
+                      ],
                       const SizedBox(height: 5),
-                      Text(
-                        status,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: progressColor,
-                          height: 1.0,
-                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (isCharging) ...[
+                            Icon(Icons.bolt, color: progressColor, size: 22),
+                            const SizedBox(width: 4),
+                          ],
+                          Text(
+                            status,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: progressColor,
+                              height: 1.0,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -716,8 +708,10 @@ class _HomeScreenState extends State<HomeScreen>
                       final googleMapsUrl =
                           'https://www.google.com/maps/search/?api=1&query=${zone.lat},${zone.lng}';
                       if (await canLaunchUrl(Uri.parse(googleMapsUrl))) {
-                        await launchUrl(Uri.parse(googleMapsUrl),
-                            mode: LaunchMode.externalApplication);
+                        await launchUrl(
+                          Uri.parse(googleMapsUrl),
+                          mode: LaunchMode.externalApplication,
+                        );
                       }
                     },
                     child: Container(
@@ -790,8 +784,9 @@ class _HomeScreenState extends State<HomeScreen>
                                 if (!mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content:
-                                        Text('Failed to delete safe zone: $e'),
+                                    content: Text(
+                                      'Failed to delete safe zone: $e',
+                                    ),
                                   ),
                                 );
                               }
@@ -816,7 +811,6 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
@@ -833,12 +827,8 @@ class _HomeScreenState extends State<HomeScreen>
 
         if (deviceIdSnapshot.hasError) {
           return Scaffold(
-            appBar: AppBar(
-              title: const Text("PathFinder Dashboard"),
-            ),
-            body: Center(
-              child: Text('Error: ${deviceIdSnapshot.error}'),
-            ),
+            appBar: AppBar(title: const Text("PathFinder Dashboard")),
+            body: Center(child: Text('Error: ${deviceIdSnapshot.error}')),
           );
         }
 
@@ -883,6 +873,8 @@ class _HomeScreenState extends State<HomeScreen>
               _checkLowBattery(device);
               _checkSafeZone(device);
 
+              final isCharging = device.powerState.toLowerCase() == 'charging';
+
               final hasSafeZone = device.safeZones.isNotEmpty;
 
               return SingleChildScrollView(
@@ -890,7 +882,6 @@ class _HomeScreenState extends State<HomeScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header card
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(18),
@@ -912,9 +903,18 @@ class _HomeScreenState extends State<HomeScreen>
                             backgroundImage: user?.photoURL != null
                                 ? NetworkImage(user!.photoURL!)
                                 : null,
-                            backgroundColor: const Color.fromARGB(255, 28, 122, 190),
+                            backgroundColor: const Color.fromARGB(
+                              255,
+                              28,
+                              122,
+                              190,
+                            ),
                             child: user?.photoURL == null
-                                ? Icon(Icons.person, size: 32, color: Colors.blue.shade600)
+                                ? Icon(
+                                    Icons.person,
+                                    size: 32,
+                                    color: Colors.blue.shade600,
+                                  )
                                 : null,
                           ),
                           const SizedBox(width: 16),
@@ -931,13 +931,9 @@ class _HomeScreenState extends State<HomeScreen>
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 16),
-                    _batteryCard(device.batteryLevel),
-
+                    _batteryCard(device.batteryLevel, isCharging: isCharging),
                     const SizedBox(height: 20),
-
-                    // Modern floating status row
                     Row(
                       children: [
                         _miniStatusCard(
@@ -955,43 +951,45 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                         const SizedBox(width: 12),
                         device.sosActive
-                            ? Builder(builder: (context) {
-                                final blinkController =
-                                    _ensureSosBlinkController();
-                                return AnimatedBuilder(
-                                  animation: blinkController,
-                                  builder: (_, __) {
-                                    final blinkColor = Color.lerp(
-                                      Colors.red.shade50,
-                                      Colors.red.shade200,
-                                      blinkController.value,
-                                    );
-                                    return _miniStatusCard(
-                                      icon: Icons.warning,
-                                      label: "SOS",
-                                      value: "Active",
-                                      iconColor: Colors.red,
-                                      backgroundColor: blinkColor,
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) => SosAlertScreen(
-                                              deviceId: device.id,
-                                              userName: device.userName,
-                                              lat: device.gpsLat,
-                                              lng: device.gpsLng,
-                                              batteryLevel:
-                                                  device.batteryLevel,
-                                              sosActive: device.sosActive,
+                            ? Builder(
+                                builder: (context) {
+                                  final blinkController =
+                                      _ensureSosBlinkController();
+                                  return AnimatedBuilder(
+                                    animation: blinkController,
+                                    builder: (_, __) {
+                                      final blinkColor = Color.lerp(
+                                        Colors.red.shade50,
+                                        Colors.red.shade200,
+                                        blinkController.value,
+                                      );
+                                      return _miniStatusCard(
+                                        icon: Icons.warning,
+                                        label: "SOS",
+                                        value: "Active",
+                                        iconColor: Colors.red,
+                                        backgroundColor: blinkColor,
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => SosAlertScreen(
+                                                deviceId: device.id,
+                                                userName: device.userName,
+                                                lat: device.gpsLat,
+                                                lng: device.gpsLng,
+                                                batteryLevel:
+                                                    device.batteryLevel,
+                                                sosActive: device.sosActive,
+                                              ),
                                             ),
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  },
-                                );
-                              })
+                                          );
+                                        },
+                                      );
+                                    },
+                                  );
+                                },
+                              )
                             : _miniStatusCard(
                                 icon: Icons.check_circle,
                                 label: "SOS",
@@ -1016,9 +1014,7 @@ class _HomeScreenState extends State<HomeScreen>
                               ),
                       ],
                     ),
-
                     const SizedBox(height: 16),
-
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(18),
@@ -1038,7 +1034,10 @@ class _HomeScreenState extends State<HomeScreen>
                           CircleAvatar(
                             radius: 26,
                             backgroundColor: Colors.blue.shade50,
-                            child: const Icon(Icons.location_on, color: Colors.blue),
+                            child: const Icon(
+                              Icons.location_on,
+                              color: Colors.blue,
+                            ),
                           ),
                           const SizedBox(width: 14),
                           Expanded(
@@ -1071,9 +1070,13 @@ class _HomeScreenState extends State<HomeScreen>
                             onTap: () async {
                               final googleMapsUrl =
                                   'https://www.google.com/maps/search/?api=1&query=${device.gpsLat},${device.gpsLng}';
-                              if (await canLaunchUrl(Uri.parse(googleMapsUrl))) {
-                                await launchUrl(Uri.parse(googleMapsUrl),
-                                    mode: LaunchMode.externalApplication);
+                              if (await canLaunchUrl(
+                                Uri.parse(googleMapsUrl),
+                              )) {
+                                await launchUrl(
+                                  Uri.parse(googleMapsUrl),
+                                  mode: LaunchMode.externalApplication,
+                                );
                               }
                             },
                             borderRadius: BorderRadius.circular(8),
@@ -1087,16 +1090,16 @@ class _HomeScreenState extends State<HomeScreen>
                                 ],
                               ),
                             ),
-                          )
+                          ),
                         ],
                       ),
                     ),
-
                     if (hasSafeZone) ...[
                       const SizedBox(height: 16),
                       InkWell(
                         borderRadius: BorderRadius.circular(22),
-                        onTap: () => _showSafeZonesDialog(context, device, deviceId),
+                        onTap: () =>
+                            _showSafeZonesDialog(context, device, deviceId),
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(18),
@@ -1114,8 +1117,11 @@ class _HomeScreenState extends State<HomeScreen>
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              const Icon(Icons.home,
-                                  color: Colors.teal, size: 28),
+                              const Icon(
+                                Icons.home,
+                                color: Colors.teal,
+                                size: 28,
+                              ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
@@ -1139,18 +1145,18 @@ class _HomeScreenState extends State<HomeScreen>
                                   ],
                                 ),
                               ),
-                              Icon(Icons.arrow_forward_ios, 
-                                  size: 16, 
-                                  color: Colors.grey.shade400),
+                              Icon(
+                                Icons.arrow_forward_ios,
+                                size: 16,
+                                color: Colors.grey.shade400,
+                              ),
                             ],
                           ),
                         ),
                       ),
                     ],
-
                     const SizedBox(height: 20),
                     _sectionTitle("Quick Actions"),
-
                     IntrinsicHeight(
                       child: Row(
                         children: [
@@ -1194,9 +1200,7 @@ class _HomeScreenState extends State<HomeScreen>
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 12),
-
                     IntrinsicHeight(
                       child: Row(
                         children: [
@@ -1248,10 +1252,7 @@ class _BatteryArcPainter extends CustomPainter {
   final double progress;
   final Color color;
 
-  _BatteryArcPainter({
-    required this.progress,
-    required this.color,
-  });
+  _BatteryArcPainter({required this.progress, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {

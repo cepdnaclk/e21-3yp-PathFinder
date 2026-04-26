@@ -39,6 +39,7 @@ class DeviceModel {
   final double gpsLng;
   final bool online;
   final int batteryLevel;
+  final String powerState;
   final bool sosActive;
   final Timestamp? lastUpdated;
   final List<SafeZoneModel> safeZones;
@@ -50,6 +51,7 @@ class DeviceModel {
     required this.gpsLng,
     required this.online,
     required this.batteryLevel,
+    required this.powerState,
     required this.sosActive,
     required this.lastUpdated,
     required this.safeZones,
@@ -65,6 +67,7 @@ class DeviceModel {
       gpsLng: (data['gpsLng'] ?? 0).toDouble(),
       online: data['online'] ?? false,
       batteryLevel: (data['batteryLevel'] ?? 0).toInt(),
+      powerState: (data['powerState'] ?? 'unpluged').toString(),
       sosActive: data['sosActive'] ?? false,
       lastUpdated: data['lastUpdated'],
       safeZones: safeZonesRaw
