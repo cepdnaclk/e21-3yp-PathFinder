@@ -63,9 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
           builder: (context, constraints) {
             return SingleChildScrollView(
               child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight,
-                ),
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: Center(
                   child: Padding(
                     padding: const EdgeInsets.all(24),
@@ -75,10 +73,17 @@ class _LoginScreenState extends State<LoginScreen> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const Icon(Icons.shield, size: 80),
+                          Image.asset(
+                            'assets/images/logo.png',
+                            height: 96,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(Icons.shield, size: 80);
+                            },
+                          ),
                           const SizedBox(height: 20),
                           const Text(
-                            'PathFinder Caretaker App',
+                            'PathFinder',
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -107,8 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               : ElevatedButton.icon(
                                   onPressed: _signIn,
                                   icon: const Icon(Icons.login),
-                                  label:
-                                      const Text('Sign in with Google'),
+                                  label: const Text('Sign in with Google'),
                                 ),
                         ],
                       ),
