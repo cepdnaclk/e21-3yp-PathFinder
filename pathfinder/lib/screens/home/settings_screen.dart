@@ -56,10 +56,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _error = e.toString();
       });
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
     }
   }
 
@@ -126,10 +127,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         SnackBar(content: Text("Failed to unlink device: $e")),
       );
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
     }
   }
 
@@ -216,10 +218,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } finally {
       userContactController.dispose();
       emergencyContactController.dispose();
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
     }
   }
 
@@ -304,7 +307,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.07),
+              color: Colors.black.withValues(alpha: 0.07),
               blurRadius: 16,
               offset: const Offset(0, 7),
             ),
@@ -314,7 +317,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             CircleAvatar(
               radius: 27,
-              backgroundColor: color.withOpacity(0.10),
+              backgroundColor: color.withValues(alpha: 0.10),
               child: Icon(icon, color: color),
             ),
             const SizedBox(width: 14),
@@ -418,7 +421,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   borderRadius: BorderRadius.circular(32),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.08),
+                                      color: Colors.black.withValues(alpha: 0.08),
                                       blurRadius: 18,
                                       offset: const Offset(0, 8),
                                     ),

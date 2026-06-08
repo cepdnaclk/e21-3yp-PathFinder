@@ -135,7 +135,7 @@ class _SafeZonePickerScreenState extends State<SafeZonePickerScreen> {
                                 point: _selectedCenter,
                                 radius: _radius,
                                 useRadiusInMeter: true,
-                                color: Colors.blue.withOpacity(0.18),
+                                color: Colors.blue.withValues(alpha: 0.18),
                                 borderColor: Colors.blue,
                                 borderStrokeWidth: 2,
                               ),
@@ -159,7 +159,7 @@ class _SafeZonePickerScreenState extends State<SafeZonePickerScreen> {
                                 height: 80,
                                 child: Container(
                                   decoration: BoxDecoration(
-                                    color: Colors.blue.withOpacity(0.16),
+                                    color: Colors.blue.withValues(alpha: 0.16),
                                     shape: BoxShape.circle,
                                   ),
                                   child: Center(
@@ -199,7 +199,7 @@ class _SafeZonePickerScreenState extends State<SafeZonePickerScreen> {
                             borderRadius: BorderRadius.circular(24),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.10),
+                                color: Colors.black.withValues(alpha: 0.10),
                                 blurRadius: 18,
                                 offset: const Offset(0, 8),
                               ),

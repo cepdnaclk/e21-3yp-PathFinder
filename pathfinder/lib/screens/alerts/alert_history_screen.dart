@@ -113,7 +113,7 @@ class AlertHistoryScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(32),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 18,
                 offset: const Offset(0, 8),
               ),
@@ -124,7 +124,7 @@ class AlertHistoryScreen extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 42,
-                backgroundColor: Colors.green.withOpacity(0.10),
+                backgroundColor: Colors.green.withValues(alpha: 0.10),
                 child: const Icon(
                   Icons.check_circle,
                   size: 50,
@@ -164,7 +164,7 @@ class AlertHistoryScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(26),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.07),
+            color: Colors.black.withValues(alpha: 0.07),
             blurRadius: 16,
             offset: const Offset(0, 7),
           ),
@@ -176,7 +176,7 @@ class AlertHistoryScreen extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 28,
-                backgroundColor: statusColor.withOpacity(0.10),
+                backgroundColor: statusColor.withValues(alpha: 0.10),
                 child: Icon(typeIcon, color: statusColor, size: 30),
               ),
               const SizedBox(width: 14),
@@ -377,7 +377,7 @@ class AlertHistoryScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(28),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
+                              color: Colors.black.withValues(alpha: 0.08),
                               blurRadius: 18,
                               offset: const Offset(0, 8),
                             ),
@@ -387,7 +387,7 @@ class AlertHistoryScreen extends StatelessWidget {
                           children: [
                             CircleAvatar(
                               radius: 28,
-                              backgroundColor: Colors.orange.withOpacity(0.10),
+                              backgroundColor: Colors.orange.withValues(alpha: 0.10),
                               child: const Icon(
                                 Icons.notifications_active,
                                 color: Colors.orange,

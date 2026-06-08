@@ -20,7 +20,7 @@ class LiveTrackingScreen extends StatefulWidget {
 class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
   final MapController _mapController = MapController();
 
-  bool _followUser = true;
+  final bool _followUser = true;
 
   double _currentLat = 0;
   double _currentLng = 0;
@@ -103,7 +103,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.10),
+              color: Colors.black.withValues(alpha: 0.10),
               blurRadius: 18,
               offset: const Offset(0, 8),
             ),
@@ -167,7 +167,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.10),
+              color: Colors.black.withValues(alpha: 0.10),
               blurRadius: 18,
               offset: const Offset(0, 8),
             ),
@@ -400,7 +400,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                                           width: 70,
                                           height: 70,
                                           decoration: BoxDecoration(
-                                            color: Colors.blue.withOpacity(0.18),
+                                            color: Colors.blue.withValues(alpha: 0.18),
                                             shape: BoxShape.circle,
                                           ),
                                         ),

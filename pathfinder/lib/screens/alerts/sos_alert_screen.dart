@@ -207,7 +207,7 @@ class _SosAlertScreenState extends State<SosAlertScreen> {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 16,
               offset: const Offset(0, 7),
             ),
@@ -217,7 +217,7 @@ class _SosAlertScreenState extends State<SosAlertScreen> {
           children: [
             CircleAvatar(
               radius: 25,
-              backgroundColor: color.withOpacity(0.10),
+              backgroundColor: color.withValues(alpha: 0.10),
               child: Icon(icon, color: color),
             ),
             const SizedBox(height: 10),
@@ -264,7 +264,7 @@ class _SosAlertScreenState extends State<SosAlertScreen> {
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 16,
                 offset: const Offset(0, 7),
               ),
@@ -274,7 +274,7 @@ class _SosAlertScreenState extends State<SosAlertScreen> {
             children: [
               CircleAvatar(
                 radius: 27,
-                backgroundColor: color.withOpacity(0.10),
+                backgroundColor: color.withValues(alpha: 0.10),
                 child: Icon(icon, color: color),
               ),
               const SizedBox(height: 10),
@@ -311,7 +311,7 @@ class _SosAlertScreenState extends State<SosAlertScreen> {
         borderRadius: BorderRadius.circular(26),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 16,
             offset: const Offset(0, 7),
           ),
@@ -321,7 +321,7 @@ class _SosAlertScreenState extends State<SosAlertScreen> {
         children: [
           CircleAvatar(
             radius: 27,
-            backgroundColor: mainColor.withOpacity(0.10),
+            backgroundColor: mainColor.withValues(alpha: 0.10),
             child: Icon(Icons.location_on, color: mainColor),
           ),
           const SizedBox(width: 14),
@@ -522,7 +522,7 @@ class _SosAlertScreenState extends State<SosAlertScreen> {
                             borderRadius: BorderRadius.circular(32),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
+                                color: Colors.black.withValues(alpha: 0.08),
                                 blurRadius: 18,
                                 offset: const Offset(0, 8),
                               ),
@@ -532,7 +532,7 @@ class _SosAlertScreenState extends State<SosAlertScreen> {
                             children: [
                               CircleAvatar(
                                 radius: 42,
-                                backgroundColor: mainColor.withOpacity(0.10),
+                                backgroundColor: mainColor.withValues(alpha: 0.10),
                                 child: Icon(
                                   widget.sosActive
                                       ? Icons.warning_amber_rounded

@@ -76,10 +76,11 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
         _error = e.toString();
       });
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
     }
   }
 
@@ -165,7 +166,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
             borderRadius: BorderRadius.circular(32),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 18,
                 offset: const Offset(0, 8),
               ),
@@ -176,7 +177,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
             children: [
               CircleAvatar(
                 radius: 42,
-                backgroundColor: Colors.red.withOpacity(0.10),
+                backgroundColor: Colors.red.withValues(alpha: 0.10),
                 child: const Icon(
                   Icons.videocam_off,
                   size: 48,
@@ -236,7 +237,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.10),
+                            color: Colors.black.withValues(alpha: 0.10),
                             blurRadius: 18,
                             offset: const Offset(0, 8),
                           ),
