@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
-import '../../services/firestore_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 class CameraFeedScreen extends StatefulWidget {
   final String deviceId;
@@ -15,60 +15,97 @@ class CameraFeedScreen extends StatefulWidget {
 }
 
 class _CameraFeedScreenState extends State<CameraFeedScreen> {
-  bool _loading = true;
   String? _error;
-  WebViewController? _controller;
+
+  final RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();
+  RTCPeerConnection? _peerConnection;
+
+  bool _connected = false;
+  bool _joining = false;
+
   String _userName = 'Unknown';
   bool _online = false;
 
   @override
   void initState() {
     super.initState();
-    _loadCameraUrl();
+    _remoteRenderer.initialize();
   }
 
-  Future<void> _loadCameraUrl() async {
+  Future<void> _joinWebRtcStream(String roomId) async {
+    if (_joining || _connected) return;
+
     setState(() {
-      _loading = true;
+      _joining = true;
       _error = null;
     });
 
     try {
-      final deviceData =
-          await FirestoreService().getDeviceData(widget.deviceId);
+      final roomRef =
+          FirebaseFirestore.instance.collection('streamRooms').doc(roomId);
 
-      if (deviceData == null) {
-        throw Exception("Device not found");
+      final roomSnapshot = await roomRef.get();
+      final roomData = roomSnapshot.data();
+
+      if (roomData == null || roomData['offer'] == null) {
+        throw Exception('No WebRTC offer found for this stream room');
       }
 
-      final url = deviceData['cameraStreamUrl']?.toString();
+      final offer = roomData['offer'];
 
-      if (url == null || url.isEmpty) {
-        throw Exception("No camera stream URL found for this device");
-      }
+      final config = {
+        'iceServers': [
+          {'urls': 'stun:stun.l.google.com:19302'},
+        ],
+      };
 
-      final controller = WebViewController()
-        ..setJavaScriptMode(JavaScriptMode.unrestricted)
-        ..setBackgroundColor(const Color(0xFF000000))
-        ..setNavigationDelegate(
-          NavigationDelegate(
-            onWebResourceError: (error) {
-              if (mounted) {
-                setState(() {
-                  _error = "Failed to load stream: ${error.description}";
-                });
-              }
-            },
-          ),
-        )
-        ..loadRequest(Uri.parse(url));
+      _peerConnection = await createPeerConnection(config);
 
-      if (!mounted) return;
+      _peerConnection!.onTrack = (RTCTrackEvent event) {
+        if (event.streams.isNotEmpty) {
+          setState(() {
+            _remoteRenderer.srcObject = event.streams[0];
+            _connected = true;
+          });
+        }
+      };
 
-      setState(() {
-        _controller = controller;
-        _userName = (deviceData['userName'] ?? 'Unknown').toString();
-        _online = deviceData['online'] == true;
+      _peerConnection!.onIceCandidate = (RTCIceCandidate candidate) {
+        roomRef.collection('viewerCandidates').add(candidate.toMap());
+      };
+
+      await _peerConnection!.setRemoteDescription(
+        RTCSessionDescription(
+          offer['sdp'],
+          offer['type'],
+        ),
+      );
+
+      final answer = await _peerConnection!.createAnswer();
+      await _peerConnection!.setLocalDescription(answer);
+
+      await roomRef.update({
+        'answer': {
+          'type': answer.type,
+          'sdp': answer.sdp,
+        }
+      });
+
+      roomRef.collection('callerCandidates').snapshots().listen((snapshot) {
+        for (final change in snapshot.docChanges) {
+          if (change.type == DocumentChangeType.added) {
+            final data = change.doc.data();
+            if (data == null) continue;
+
+            _peerConnection?.addCandidate(
+              RTCIceCandidate(
+                data['candidate'],
+                data['sdpMid'],
+                data['sdpMLineIndex'],
+              ),
+            );
+          }
+        }
       });
     } catch (e) {
       if (!mounted) return;
@@ -76,19 +113,22 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
         _error = e.toString();
       });
     } finally {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _joining = false;
+      });
     }
   }
 
-  Future<void> _reloadStream() async {
-    if (_controller != null) {
-      await _controller!.reload();
-    } else {
-      await _loadCameraUrl();
+  Future<void> _closeConnection() async {
+    await _peerConnection?.close();
+    _peerConnection = null;
+
+    if (mounted) {
+      setState(() {
+        _connected = false;
+        _remoteRenderer.srcObject = null;
+      });
     }
   }
 
@@ -154,6 +194,56 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
     );
   }
 
+  Widget _streamOffView() {
+    return Padding(
+      padding: const EdgeInsets.all(18),
+      child: Center(
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 42,
+                backgroundColor: Color(0xFFFFE8E8),
+                child: Icon(
+                  Icons.videocam_off,
+                  size: 48,
+                  color: Colors.red,
+                ),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Live Stream Is Off',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'The user has not started the live camera stream.',
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _errorView() {
     return Padding(
       padding: const EdgeInsets.all(18),
@@ -205,7 +295,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
     );
   }
 
-  Widget _cameraView() {
+  Widget _cameraView(String roomId) {
     return Column(
       children: [
         Expanded(
@@ -217,14 +307,20 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                 children: [
                   Container(
                     color: Colors.black,
-                    child: _controller == null
-                        ? const Center(
-                            child: Text(
-                              'No stream available',
-                              style: TextStyle(color: Colors.white),
-                            ),
+                    child: _connected
+                        ? RTCVideoView(
+                            _remoteRenderer,
+                            objectFit: RTCVideoViewObjectFit
+                                .RTCVideoViewObjectFitContain,
                           )
-                        : WebViewWidget(controller: _controller!),
+                        : Center(
+                            child: Text(
+                              _joining
+                                  ? 'Connecting to stream...'
+                                  : 'Tap refresh to open stream',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
                   ),
                   Positioned(
                     top: 18,
@@ -286,7 +382,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                             ),
                           ),
                           IconButton(
-                            onPressed: _reloadStream,
+                            onPressed: () => _joinWebRtcStream(roomId),
                             icon: const Icon(
                               Icons.refresh,
                               color: Colors.purple,
@@ -348,7 +444,18 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
   }
 
   @override
+  void dispose() {
+    _remoteRenderer.dispose();
+    _peerConnection?.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final deviceRef = FirebaseFirestore.instance
+        .collection('devices')
+        .doc(widget.deviceId);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF4D9DD),
       body: SafeArea(
@@ -360,7 +467,10 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                 children: [
                   _topButton(
                     icon: Icons.arrow_back,
-                    onTap: () => Navigator.pop(context),
+                    onTap: () {
+                      _closeConnection();
+                      Navigator.pop(context);
+                    },
                   ),
                   const Spacer(),
                   const Text(
@@ -377,11 +487,47 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
             ),
             const SizedBox(height: 12),
             Expanded(
-              child: _loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _error != null
-                      ? _errorView()
-                      : _cameraView(),
+              child: StreamBuilder<DocumentSnapshot>(
+                stream: deviceRef.snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    _error = snapshot.error.toString();
+                    return _errorView();
+                  }
+
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  final data =
+                      snapshot.data!.data() as Map<String, dynamic>?;
+
+                  if (data == null) {
+                    _error = 'Device document not found';
+                    return _errorView();
+                  }
+
+                  _userName = (data['userName'] ?? 'Unknown').toString();
+                  _online = data['online'] == true;
+
+                  final streamEnabled = data['streamEnabled'] == true;
+                  final streamRoomId =
+                      (data['streamRoomId'] ?? '').toString();
+
+                  if (!streamEnabled || streamRoomId.isEmpty) {
+                    if (_connected) {
+                      _closeConnection();
+                    }
+                    return _streamOffView();
+                  }
+
+                  if (_error != null) {
+                    return _errorView();
+                  }
+
+                  return _cameraView(streamRoomId);
+                },
+              ),
             ),
           ],
         ),

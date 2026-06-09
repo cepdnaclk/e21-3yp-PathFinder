@@ -44,6 +44,7 @@ dependencies:
   firebase_messaging: ^16.0.0
   flutter_local_notifications: ^19.4.0
   webview_flutter: ^4.13.1
+  flutter_webrtc: ^1.0.0
   url_launcher: ^6.3.0
   http: ^1.2.2
 
@@ -116,8 +117,8 @@ flutter_launcher_icons:
 
 flutter_native_splash:
   color: "#FFFFFF"
-  image: assets/images/pathfinder_logo.png
+  image: assets/icon/pathfinder_logo.png
 
   android_12:
-    image: assets/images/pathfinder_logo.png
+    image: assets/icon/pathfinder_logo.png
     color: "#FFFFFF"
