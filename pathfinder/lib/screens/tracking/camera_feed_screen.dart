@@ -32,6 +32,56 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
     _remoteRenderer.initialize();
   }
 
+  String _preferVp8Only(String sdp) {
+    final lines = sdp.split('\r\n');
+
+    final vp8Payloads = <String>{};
+    final allowedPayloads = <String>{};
+
+    for (final line in lines) {
+      if (line.startsWith('a=rtpmap:') && line.contains('VP8/90000')) {
+        final payload = line.split(':')[1].split(' ')[0];
+        vp8Payloads.add(payload);
+        allowedPayloads.add(payload);
+      }
+    }
+
+    for (final line in lines) {
+      if (line.startsWith('a=fmtp:') && line.contains('apt=')) {
+        final payload = line.split(':')[1].split(' ')[0];
+        final apt = line.split('apt=')[1].split(';')[0];
+
+        if (vp8Payloads.contains(apt)) {
+          allowedPayloads.add(payload);
+        }
+      }
+    }
+
+    final filteredLines = <String>[];
+
+    for (final line in lines) {
+      if (line.startsWith('m=video')) {
+        final parts = line.split(' ');
+        filteredLines.add([...parts.take(3), ...allowedPayloads].join(' '));
+        continue;
+      }
+
+      if (line.startsWith('a=rtpmap:') ||
+          line.startsWith('a=rtcp-fb:') ||
+          line.startsWith('a=fmtp:')) {
+        final payload = line.split(':')[1].split(' ')[0];
+
+        if (!allowedPayloads.contains(payload)) {
+          continue;
+        }
+      }
+
+      filteredLines.add(line);
+    }
+
+    return filteredLines.join('\r\n');
+  }
+
   Future<void> _joinWebRtcStream(String roomId) async {
     if (_joining || _connected) return;
 
@@ -44,13 +94,28 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
       final roomRef =
           FirebaseFirestore.instance.collection('streamRooms').doc(roomId);
 
-      await roomRef.update({
+      await roomRef.set({
         'streamRequested': true,
         'streamActive': false,
+        'streamAvailable': true,
         'connectionState': 'viewer_joining',
+        'lastError': '',
         'offer': {'sdp': '', 'type': ''},
         'answer': {'sdp': '', 'type': ''},
-      });
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      debugPrint('[APP STREAM] streamRequested set to true for room: $roomId');
+
+      final callerDocs = await roomRef.collection('callerCandidates').get();
+      for (final doc in callerDocs.docs) {
+        await doc.reference.delete();
+      }
+
+      final calleeDocs = await roomRef.collection('calleeCandidates').get();
+      for (final doc in calleeDocs.docs) {
+        await doc.reference.delete();
+      }
 
       final config = {
         'iceServers': [
@@ -59,6 +124,13 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
       };
 
       _peerConnection = await createPeerConnection(config);
+
+      await _peerConnection!.addTransceiver(
+        kind: RTCRtpMediaType.RTCRtpMediaTypeVideo,
+        init: RTCRtpTransceiverInit(
+          direction: TransceiverDirection.RecvOnly,
+        ),
+      );
 
       _peerConnection!.onTrack = (RTCTrackEvent event) {
         if (event.streams.isNotEmpty) {
@@ -74,19 +146,31 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
       };
 
       final offer = await _peerConnection!.createOffer({
-        'offerToReceiveVideo': 1,
-        'offerToReceiveAudio': 0,
-      });
-
-      await _peerConnection!.setLocalDescription(offer);
-
-      await roomRef.update({
-        'offer': {
-          'type': offer.type,
-          'sdp': offer.sdp,
+        'mandatory': {
+          'OfferToReceiveVideo': true,
+          'OfferToReceiveAudio': false,
         },
-        'updatedAt': FieldValue.serverTimestamp(),
+        'optional': [],
       });
+
+      final filteredSdp = _preferVp8Only(offer.sdp ?? '');
+
+      final filteredOffer = RTCSessionDescription(
+        filteredSdp,
+        offer.type,
+      );
+
+      await _peerConnection!.setLocalDescription(filteredOffer);
+
+      await roomRef.set({
+        'streamRequested': true,
+        'offer': {
+          'type': filteredOffer.type,
+          'sdp': filteredOffer.sdp,
+        },
+        'connectionState': 'offer_created',
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
 
       roomRef.snapshots().listen((snapshot) async {
         final data = snapshot.data();
@@ -522,7 +606,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                       snapshot.data!.data() as Map<String, dynamic>?;
 
                   if (data == null) {
-                    _error = 'Device document not found';
+                    _error = 'Stream room not found';
                     return _errorView();
                   }
 
@@ -530,16 +614,9 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
 
                   final streamAvailable = data['streamAvailable'] == true;
 
-                  final streamRequested = data['streamRequested'] == true;
-
-                  final streamActive = data['streamActive'] == true;
-
                   const streamRoomId = 'test_room';
 
-                  if (!streamAvailable ||
-                      !streamRequested ||
-                      !streamActive ||
-                      streamRoomId.isEmpty) {
+                  if (!streamAvailable) {
                     if (_connected) {
                       _closeConnection();
                     }
