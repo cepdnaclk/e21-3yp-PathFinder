@@ -44,14 +44,13 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
       final roomRef =
           FirebaseFirestore.instance.collection('streamRooms').doc(roomId);
 
-      final roomSnapshot = await roomRef.get();
-      final roomData = roomSnapshot.data();
-
-      if (roomData == null || roomData['offer'] == null) {
-        throw Exception('No WebRTC offer found for this stream room');
-      }
-
-      final offer = roomData['offer'];
+      await roomRef.update({
+        'streamRequested': true,
+        'streamActive': false,
+        'connectionState': 'viewer_joining',
+        'offer': {'sdp': '', 'type': ''},
+        'answer': {'sdp': '', 'type': ''},
+      });
 
       final config = {
         'iceServers': [
@@ -71,31 +70,51 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
       };
 
       _peerConnection!.onIceCandidate = (RTCIceCandidate candidate) {
-        roomRef.collection('viewerCandidates').add(candidate.toMap());
+        roomRef.collection('callerCandidates').add(candidate.toMap());
       };
 
-      await _peerConnection!.setRemoteDescription(
-        RTCSessionDescription(
-          offer['sdp'],
-          offer['type'],
-        ),
-      );
+      final offer = await _peerConnection!.createOffer({
+        'offerToReceiveVideo': 1,
+        'offerToReceiveAudio': 0,
+      });
 
-      final answer = await _peerConnection!.createAnswer();
-      await _peerConnection!.setLocalDescription(answer);
+      await _peerConnection!.setLocalDescription(offer);
 
       await roomRef.update({
-        'answer': {
-          'type': answer.type,
-          'sdp': answer.sdp,
+        'offer': {
+          'type': offer.type,
+          'sdp': offer.sdp,
+        },
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      roomRef.snapshots().listen((snapshot) async {
+        final data = snapshot.data();
+        if (data == null) return;
+
+        final answer = data['answer'];
+        if (answer == null) return;
+
+        final answerSdp = answer['sdp'];
+        final answerType = answer['type'];
+
+        if (answerSdp == null || answerSdp.toString().isEmpty) return;
+        if (answerType == null || answerType.toString().isEmpty) return;
+
+        if (_peerConnection?.signalingState !=
+            RTCSignalingState.RTCSignalingStateStable) {
+          await _peerConnection!.setRemoteDescription(
+            RTCSessionDescription(answerSdp, answerType),
+          );
         }
       });
 
-      roomRef.collection('callerCandidates').snapshots().listen((snapshot) {
+      roomRef.collection('calleeCandidates').snapshots().listen((snapshot) {
         for (final change in snapshot.docChanges) {
           if (change.type == DocumentChangeType.added) {
             final data = change.doc.data();
             if (data == null) continue;
+            if (data['candidate'] == null) continue;
 
             _peerConnection?.addCandidate(
               RTCIceCandidate(
@@ -452,9 +471,9 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final deviceRef = FirebaseFirestore.instance
-        .collection('devices')
-        .doc(widget.deviceId);
+    final roomRef = FirebaseFirestore.instance
+        .collection('streamRooms')
+        .doc('test_room');
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4D9DD),
@@ -488,7 +507,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
             const SizedBox(height: 12),
             Expanded(
               child: StreamBuilder<DocumentSnapshot>(
-                stream: deviceRef.snapshots(),
+                stream: roomRef.snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
                     _error = snapshot.error.toString();
@@ -507,14 +526,20 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                     return _errorView();
                   }
 
-                  _userName = (data['userName'] ?? 'Unknown').toString();
-                  _online = data['online'] == true;
+                  _online = true;
 
-                  final streamEnabled = data['streamEnabled'] == true;
-                  final streamRoomId =
-                      (data['streamRoomId'] ?? '').toString();
+                  final streamAvailable = data['streamAvailable'] == true;
 
-                  if (!streamEnabled || streamRoomId.isEmpty) {
+                  final streamRequested = data['streamRequested'] == true;
+
+                  final streamActive = data['streamActive'] == true;
+
+                  const streamRoomId = 'test_room';
+
+                  if (!streamAvailable ||
+                      !streamRequested ||
+                      !streamActive ||
+                      streamRoomId.isEmpty) {
                     if (_connected) {
                       _closeConnection();
                     }
