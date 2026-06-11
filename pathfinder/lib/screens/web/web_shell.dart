@@ -5,6 +5,7 @@ import 'web_account_page.dart';
 import 'web_dashboard_page.dart';
 import 'web_sos_history_page.dart';
 import 'widgets/web_sidebar.dart';
+import 'web_live_camera_page.dart';
 
 class WebShell extends StatefulWidget {
   const WebShell({super.key});
@@ -53,8 +54,10 @@ class _WebShellState extends State<WebShell> {
       case 0:
         return const WebDashboardPage();
       case 1:
-        return const WebSosHistoryPage();
+        return const WebLiveCameraPage();
       case 2:
+        return const WebSosHistoryPage();
+      case 3:
         return const WebAccountPage();
       default:
         return const WebDashboardPage();
