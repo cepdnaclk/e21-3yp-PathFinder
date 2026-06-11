@@ -119,7 +119,14 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
 
       final config = {
         'iceServers': [
-          {'urls': 'stun:stun.l.google.com:19302'},
+          {
+            'urls': 'stun:stun.relay.metered.ca:80',
+          },
+          {
+            'urls': 'turn:global.relay.metered.ca:80',
+            'username': '171b155e7e3b7363fdc462a5',
+            'credential': 'vYNGMpoS3eprvmEZ',
+          },
         ],
       };
 
