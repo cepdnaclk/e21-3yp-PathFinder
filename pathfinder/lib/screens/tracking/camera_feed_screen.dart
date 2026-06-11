@@ -23,7 +23,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
   bool _connected = false;
   bool _joining = false;
 
-  String _userName = 'Unknown';
+  final String _userName = 'Unknown';
   bool _online = false;
 
   @override
@@ -223,10 +223,11 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
         _error = e.toString();
       });
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _joining = false;
-      });
+      if (mounted) {
+        setState(() {
+          _joining = false;
+        });
+      }
     }
   }
 
