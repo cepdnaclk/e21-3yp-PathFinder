@@ -4,17 +4,21 @@ import 'package:flutter/material.dart';
 class WebSidebar extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onItemSelected;
+  final bool compact;
+
+
 
   const WebSidebar({
     super.key,
     required this.selectedIndex,
     required this.onItemSelected,
+    this.compact = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 260,
+      width: compact ? 86 : 260,
       color: const Color(0xFF0F172A),
       padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 18),
       child: Column(
