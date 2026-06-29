@@ -11,6 +11,8 @@ class WebDashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 700;
 
     if (user == null) {
       return const Center(child: Text('No user signed in'));
@@ -130,10 +132,10 @@ class WebDashboardPage extends StatelessWidget {
                         GridView.count(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          crossAxisCount: 2,
+                          crossAxisCount: isSmallScreen ? 1 : 2,
+                          childAspectRatio: isSmallScreen ? 2.0 : 2.4,
                           crossAxisSpacing: 22,
                           mainAxisSpacing: 22,
-                          childAspectRatio: 2.4,
                           children: [
                             WebStatCard(
                               icon: Icons.sensors,
@@ -186,10 +188,10 @@ class WebDashboardPage extends StatelessWidget {
                         GridView.count(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          crossAxisCount: 3,
+                          crossAxisCount: isSmallScreen ? 1 : 2,
+                          childAspectRatio: isSmallScreen ? 1.25 : 1.55,
                           crossAxisSpacing: 22,
                           mainAxisSpacing: 22,
-                          childAspectRatio: 1.55,
                           children: [
                             _ActionCard(
                               icon: Icons.location_on,
@@ -492,6 +494,8 @@ class _ActionCardState extends State<_ActionCard> {
   @override
   Widget build(BuildContext context) {
     final bool enabled = widget.onTap != null;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 700;
 
     return MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,

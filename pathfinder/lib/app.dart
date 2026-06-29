@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => kIsWeb
-            ? const WebHomePage()
+            ? WebHomePage()
             : const SplashScreen(),
 
         '/login': (context) => kIsWeb
