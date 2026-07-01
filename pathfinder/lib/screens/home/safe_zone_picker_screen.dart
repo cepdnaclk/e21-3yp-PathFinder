@@ -213,6 +213,7 @@ class _SafeZonePickerScreenState extends State<SafeZonePickerScreen> {
               right: 14,
               child: _PickerGlassCard(
                 borderRadius: 18,
+                dark: true,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 13,
                   vertical: 10,
@@ -230,7 +231,7 @@ class _SafeZonePickerScreenState extends State<SafeZonePickerScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'ZONE NAME',
+                            'TAP TO RENAME',
                             style: TextStyle(
                               color: _PickerColors.muted,
                               fontSize: 9,
@@ -402,11 +403,13 @@ class _PickerGlassCard extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(16),
     this.borderRadius = 20,
+    this.dark = false,
   });
 
   final Widget child;
   final EdgeInsetsGeometry padding;
   final double borderRadius;
+  final bool dark;
 
   @override
   Widget build(BuildContext context) {
@@ -421,11 +424,17 @@ class _PickerGlassCard extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                const Color(0xFFD7E0EB).withValues(alpha: .17),
-                const Color(0xFF7088AD).withValues(alpha: .14),
-                const Color(0xFF16243A).withValues(alpha: .72),
-              ],
+              colors: dark
+                  ? [
+                      const Color(0xFF1E293B).withValues(alpha: .94),
+                      const Color(0xFF111C2B).withValues(alpha: .96),
+                      const Color(0xFF08111E).withValues(alpha: .98),
+                    ]
+                  : [
+                      const Color(0xFFD7E0EB).withValues(alpha: .17),
+                      const Color(0xFF7088AD).withValues(alpha: .14),
+                      const Color(0xFF16243A).withValues(alpha: .72),
+                    ],
               stops: const [0, .42, 1],
             ),
             boxShadow: [
