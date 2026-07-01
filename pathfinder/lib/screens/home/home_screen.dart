@@ -16,7 +16,7 @@ import 'safe_zone_picker_screen.dart';
 import 'settings_screen.dart';
 
 class _HomeColors {
-  static const background = Color(0xFF050A12);
+  static const background = Color(0xFF2B3749);
   static const surface = Color(0xFF101925);
   static const surfaceLight = Color(0xFF182333);
   static const blue = Color(0xFF2563EB);
@@ -31,7 +31,9 @@ class _HomeColors {
 }
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.deviceId});
+
+  final String? deviceId;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -41,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   final FirestoreService _firestoreService = FirestoreService();
 
-  late final Future<String> _deviceIdFuture;
+  Future<String>? _deviceIdFuture;
   late final AnimationController _sosPulseController;
 
   bool _sosScreenOpen = false;
@@ -53,7 +55,9 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
-    _deviceIdFuture = _getMyDeviceId();
+    if (widget.deviceId == null) {
+      _deviceIdFuture = _getMyDeviceId();
+    }
     _sosPulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 850),
@@ -271,7 +275,13 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _openScreen(Widget screen) {
-    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder<void>(
+        pageBuilder: (_, _, _) => screen,
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+      ),
+    );
   }
 
   Future<void> _openMap(double lat, double lng) async {
@@ -463,8 +473,12 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (widget.deviceId != null) {
+      return _buildDeviceStream(widget.deviceId!);
+    }
+
     return FutureBuilder<String>(
-      future: _deviceIdFuture,
+      future: _deviceIdFuture!,
       builder: (context, deviceIdSnapshot) {
         if (deviceIdSnapshot.connectionState == ConnectionState.waiting) {
           return const _LoadingScaffold();
@@ -474,23 +488,42 @@ class _HomeScreenState extends State<HomeScreen>
         }
 
         final deviceId = deviceIdSnapshot.data!;
-        return StreamBuilder<DeviceModel>(
-          stream: _firestoreService.getDeviceStream(deviceId),
-          builder: (context, deviceSnapshot) {
-            if (deviceSnapshot.hasError) {
-              return _ErrorScaffold(message: '${deviceSnapshot.error}');
-            }
-            if (!deviceSnapshot.hasData) {
-              return const _LoadingScaffold();
-            }
-
-            final device = deviceSnapshot.data!;
-            _runDeviceChecks(device);
-            return _buildDashboard(device, deviceId);
-          },
-        );
+        return _buildDeviceStream(deviceId);
       },
     );
+  }
+
+  Widget _buildDeviceStream(String deviceId) {
+    return StreamBuilder<DeviceModel>(
+      stream: _firestoreService.getDeviceStream(deviceId),
+      builder: (context, deviceSnapshot) {
+        if (deviceSnapshot.hasError) {
+          return _ErrorScaffold(message: '${deviceSnapshot.error}');
+        }
+        if (!deviceSnapshot.hasData) {
+          return _HomeTabLoading(
+            onSelected: (index) => _selectBottomTab(index, deviceId),
+          );
+        }
+
+        final device = deviceSnapshot.data!;
+        _runDeviceChecks(device);
+        return _buildDashboard(device, deviceId);
+      },
+    );
+  }
+
+  void _selectBottomTab(int index, String deviceId) {
+    switch (index) {
+      case 1:
+        _openScreen(LiveTrackingScreen(deviceId: deviceId));
+      case 2:
+        _openScreen(CameraFeedScreen(deviceId: deviceId));
+      case 3:
+        _openScreen(AlertHistoryScreen(deviceId: deviceId));
+      case 4:
+        _openScreen(SettingsScreen(deviceId: deviceId));
+    }
   }
 
   Widget _buildDashboard(DeviceModel device, String deviceId) {
@@ -539,18 +572,7 @@ class _HomeScreenState extends State<HomeScreen>
       ),
       bottomNavigationBar: _HomeBottomBar(
         currentIndex: 0,
-        onSelected: (index) {
-          switch (index) {
-            case 1:
-              _openScreen(LiveTrackingScreen(deviceId: deviceId));
-            case 2:
-              _openScreen(CameraFeedScreen(deviceId: deviceId));
-            case 3:
-              _openScreen(AlertHistoryScreen(deviceId: deviceId));
-            case 4:
-              _openScreen(SettingsScreen(deviceId: deviceId));
-          }
-        },
+        onSelected: (index) => _selectBottomTab(index, deviceId),
       ),
     );
   }
@@ -1260,94 +1282,59 @@ class _LayeredBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IgnorePointer(
-      child: ClipRect(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            const ColoredBox(color: _HomeColors.background),
-            Positioned(
-              top: -210,
-              left: -210,
-              child: Transform.rotate(
-                angle: -.28,
-                child: Container(
-                  width: 410,
-                  height: 980,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(80),
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFF9AA8BA),
-                        Color(0xFF425064),
-                        Color(0xFF172131),
-                      ],
-                    ),
-                  ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color.fromARGB(255, 24, 28, 33),
+                  Color.fromARGB(255, 46, 56, 69),
+                  Color(0xFF172131),
+                ],
+                stops: [0, .52, 1],
+              ),
+            ),
+          ),
+          ClipPath(
+            clipper: _BlueBackgroundClipper(),
+            child: const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color.fromARGB(255, 24, 28, 33),
+                    Color.fromARGB(255, 48, 54, 65),
+                    Color.fromARGB(255, 123, 131, 143),
+                  ],
+                  stops: [0, .5, 1],
                 ),
               ),
             ),
-            Positioned(
-              top: -150,
-              right: -235,
-              child: Transform.rotate(
-                angle: .2,
-                child: Container(
-                  width: 430,
-                  height: 1050,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(86),
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color.fromARGB(255, 164, 173, 186),
-                        Color.fromARGB(255, 74, 84, 100),
-                        Color.fromARGB(255, 32, 39, 50),
-                      ],
-                      stops: [0, .46, 1],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      _HomeColors.background.withValues(alpha: .2),
-                      _HomeColors.background.withValues(alpha: .58),
-                      _HomeColors.background.withValues(alpha: .9),
-                    ],
-                    stops: const [0, .55, 1],
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 210,
-              right: 20,
-              child: ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: 35, sigmaY: 35),
-                child: Container(
-                  width: 170,
-                  height: 170,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _HomeColors.lightBlue.withValues(alpha: .18),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+}
+
+class _BlueBackgroundClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    return Path()
+      ..moveTo(size.width * .62, 0)
+      ..lineTo(size.width * .36, size.height)
+      ..lineTo(size.width, size.height)
+      ..lineTo(size.width, 0)
+      ..close();
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
 
 class _LoadingScaffold extends StatelessWidget {
@@ -1359,6 +1346,32 @@ class _LoadingScaffold extends StatelessWidget {
       backgroundColor: _HomeColors.background,
       body: Center(
         child: CircularProgressIndicator(color: _HomeColors.lightBlue),
+      ),
+    );
+  }
+}
+
+class _HomeTabLoading extends StatelessWidget {
+  const _HomeTabLoading({required this.onSelected});
+
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _HomeColors.background,
+      extendBody: true,
+      body: const Stack(
+        children: [
+          Positioned.fill(child: _LayeredBackground()),
+          Center(
+            child: CircularProgressIndicator(color: _HomeColors.lightBlue),
+          ),
+        ],
+      ),
+      bottomNavigationBar: _HomeBottomBar(
+        currentIndex: 0,
+        onSelected: onSelected,
       ),
     );
   }
