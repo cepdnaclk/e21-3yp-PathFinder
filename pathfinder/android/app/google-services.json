@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "349312254099",
+    "project_id": "pathfinder-e7869",
+    "storage_bucket": "pathfinder-e7869.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:349312254099:android:ad34881c6817fed26d4d66",
+        "android_client_info": {
+          "package_name": "com.example.pathfinder"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "349312254099-l88skd0f3a934sh3jlc91rot2meto3jq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.pathfinder",
+            "certificate_hash": "cc8b41865dcd01c6382ef8daa83abb42c901c4af"
+          }
+        },
+        {
+          "client_id": "349312254099-0fcp46urg4vl7aglne2dkm96j3oqumbo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC5CT8Jyo9mvPSJSMA67DPTPPsrP9z_D90"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "349312254099-0fcp46urg4vl7aglne2dkm96j3oqumbo.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "349312254099-11bvg1iia71plds3eqnjpq0uc5ebq4b1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.pushpikaanuradha.pathfinder"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
