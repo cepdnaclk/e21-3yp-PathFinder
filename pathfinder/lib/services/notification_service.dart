@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationService {
@@ -12,8 +11,6 @@ class NotificationService {
       'Emergency SOS notifications';
 
   static Future<void> initialize() async {
-    debugPrint('NOTIF: local notification init started');
-
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosInit = DarwinInitializationSettings(
       requestAlertPermission: true,
@@ -26,20 +23,13 @@ class NotificationService {
       iOS: iosInit,
     );
 
-    await _localNotifications.initialize(
-      initSettings,
-      onDidReceiveNotificationResponse: (NotificationResponse response) {
-        debugPrint('NOTIF: notification tapped, payload=${response.payload}');
-      },
-    );
+    await _localNotifications.initialize(initSettings);
 
     // Android 13+ notification permission
     await _localNotifications
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.requestNotificationsPermission();
-
-    debugPrint('NOTIF: local notification init finished');
   }
 
   static Future<void> showSosNotification({
