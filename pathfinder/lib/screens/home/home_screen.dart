@@ -14,6 +14,7 @@ import '../tracking/camera_feed_screen.dart';
 import '../tracking/live_tracking_screen.dart';
 import 'safe_zone_picker_screen.dart';
 import 'settings_screen.dart';
+import '../../utils/safe_zone_utils.dart';
 
 class _HomeColors {
   static const background = Color(0xFF2B3749);
