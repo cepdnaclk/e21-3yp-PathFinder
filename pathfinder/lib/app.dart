@@ -1,7 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
 import 'screens/splash/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/home/home_screen.dart';
+import 'screens/web/web_home_page.dart';
+import 'screens/web/web_login_page.dart';
+import 'screens/web/web_shell.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -17,9 +22,17 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => const SplashScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/home': (context) => const HomeScreen(),
+        '/': (context) => kIsWeb
+            ? WebHomePage()
+            : const SplashScreen(),
+
+        '/login': (context) => kIsWeb
+            ? const WebLoginPage()
+            : const LoginScreen(),
+
+        '/home': (context) => kIsWeb
+            ? const WebShell()
+            : const HomeScreen(),
       },
     );
   }
