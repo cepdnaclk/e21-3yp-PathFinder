@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="620" viewBox="0 0 900 620" role="img" aria-labelledby="title desc">
+  <title id="title">Final prototype and field testing placeholder</title>
+  <desc id="desc">Gallery placeholder for final prototype and controlled field testing.</desc>
+  <rect width="900" height="620" rx="28" fill="#071421"/>
+  <path d="M0 390h900v230H0z" fill="#10283f"/>
+  <path d="M120 390h660M180 450h540M260 510h380" stroke="#ffffff" stroke-opacity="0.08" stroke-width="5"/>
+  <rect x="360" y="150" width="180" height="250" rx="28" fill="#0c1d2f" stroke="#57d9ff" stroke-width="4"/>
+  <circle cx="450" cy="230" r="38" fill="#57d9ff" opacity="0.22"/>
+  <path d="M298 356c-48 20-80 56-96 108M602 356c48 20 80 56 96 108" stroke="#51e19a" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <text x="450" y="492" fill="#eef8ff" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="800" text-anchor="middle">Final Prototype and Field Testing</text>
+  <text x="450" y="532" fill="#9bb2c7" font-family="Segoe UI, Arial, sans-serif" font-size="21" text-anchor="middle">Replace with controlled prototype validation photo</text>
+</svg>

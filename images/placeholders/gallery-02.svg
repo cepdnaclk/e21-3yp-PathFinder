@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="620" viewBox="0 0 900 620" role="img" aria-labelledby="title desc">
+  <title id="title">Raspberry Pi integration placeholder</title>
+  <desc id="desc">Gallery placeholder for Raspberry Pi integration.</desc>
+  <rect width="900" height="620" rx="28" fill="#071421"/>
+  <rect x="170" y="120" width="560" height="300" rx="28" fill="#0c1d2f" stroke="#57d9ff" stroke-width="4"/>
+  <rect x="230" y="180" width="150" height="110" rx="16" fill="#51e19a" opacity="0.2"/>
+  <rect x="452" y="168" width="170" height="140" rx="16" fill="#071421" stroke="#ffffff" stroke-opacity="0.18"/>
+  <path d="M380 238h72M622 238h58M305 290v56h260" stroke="#57d9ff" stroke-width="6" stroke-linecap="round"/>
+  <text x="450" y="492" fill="#eef8ff" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="800" text-anchor="middle">Raspberry Pi Integration</text>
+  <text x="450" y="532" fill="#9bb2c7" font-family="Segoe UI, Arial, sans-serif" font-size="21" text-anchor="middle">Replace with controller wiring or internal layout photo</text>
+</svg>

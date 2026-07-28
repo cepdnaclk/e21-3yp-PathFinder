@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640" viewBox="0 0 640 640" role="img" aria-labelledby="title desc">
+  <title id="title">Supervisor photo placeholder</title>
+  <desc id="desc">Square portrait placeholder for a PathFinder project supervisor.</desc>
+  <rect width="640" height="640" rx="28" fill="#071421"/>
+  <circle cx="506" cy="122" r="112" fill="#57d9ff" opacity="0.08"/>
+  <circle cx="142" cy="505" r="140" fill="#51e19a" opacity="0.07"/>
+  <rect x="190" y="128" width="260" height="276" rx="42" fill="#10283f" stroke="#57d9ff" stroke-width="5"/>
+  <circle cx="320" cy="220" r="54" fill="#57d9ff" opacity="0.28"/>
+  <path d="M218 366c34-70 170-70 204 0" stroke="#51e19a" stroke-width="18" stroke-linecap="round" fill="none"/>
+  <text x="320" y="480" fill="#eef8ff" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="800" text-anchor="middle">Supervisor Photo</text>
+  <text x="320" y="523" fill="#9bb2c7" font-family="Segoe UI, Arial, sans-serif" font-size="22" text-anchor="middle">Replace with supervisor portrait</text>
+</svg>

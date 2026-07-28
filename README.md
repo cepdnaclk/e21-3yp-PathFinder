@@ -1,94 +1,90 @@
----
-layout: home
-permalink: index.html
+# PathFinder Project Website
 
-repository-name: e21-3yp-PathFinder
-title: PathFinder
----
+This folder contains the static GitHub Pages website for the PathFinder third-year engineering project. It is a single-page showcase built with HTML5, CSS3, vanilla JavaScript, and local SVG placeholders.
 
-# PathFinder  
-### Intelligent Wearable Navigation System for the Visually Impaired
+## Folder Structure
 
----
+```text
+docs/
+|-- index.html
+|-- css/
+|   `-- style.css
+|-- js/
+|   `-- script.js
+|-- images/
+|   |-- placeholders/
+|   `-- README.md
+|-- assets/
+|   `-- documents/
+|       `-- README.md
+`-- README.md
+```
 
-## Team
-- E/21/141, Francisco R.D.D.K., [e21141@eng.pdn.ac.lk](mailto:e21141@eng.pdn.ac.lk)
-- E/21/442, Wijenayaka D.L.P.A., [e21442@eng.pdn.ac.lk](mailto:e21442@eng.pdn.ac.lk)
-- E/21/157, Gunarathne R.C., [e21157@eng.pdn.ac.lk](mailto:e21157@eng.pdn.ac.lk)
-- E/21/361, Sasindu K.T., [e21361@eng.pdn.ac.lk](mailto:e21361@eng.pdn.ac.lk)
+## Preview Locally
 
-<!-- Image of the wearable chest band prototype will be added here -->
+From the repository root:
 
----
+```bash
+python -m http.server 8000 --directory docs
+```
 
-## Table of Contents
-1. [Introduction](#introduction)
-2. [Solution Architecture](#solution-architecture)
-3. [Hardware and Software Designs](#hardware-and-software-designs)
-4. [Testing](#testing)
-5. [Detailed Budget](#detailed-budget)
-6. [Conclusion](#conclusion)
-7. [Links](#links)
+Alternative:
 
----
+```bash
+cd docs
+python -m http.server 8000
+```
 
-## Introduction
+Then open:
 
-Visually impaired individuals face significant challenges when navigating indoor corridors, crowded public spaces, and road crossings. Traditional assistive tools such as white canes provide limited information and do not support dynamic awareness of people, vehicles, or hazardous situations. PathFinder addresses this problem by introducing an intelligent wearable navigation system designed as a chest band. The system combines camera-based object detection, ultrasonic sensing, and edge computing to provide real-time audio guidance. It operates in two manually selectable modes: Pedestrian Mode, which detects and announces nearby people and obstacles, and Road Mode, which prioritizes vehicle detection for safer road crossings. An SOS feature enables users to instantly share their location with caregivers through a mobile application, improving safety and independence.
+```text
+http://localhost:8000
+```
 
----
+## Replace Placeholders
 
-## Solution Architecture
+All temporary images are in `docs/images/placeholders/`. Replace them with final project images when available. For example:
 
-The PathFinder system consists of a wearable device, a cloud backend, and a mobile application. The wearable device integrates a Raspberry Pi for vision-based processing and an ESP32 microcontroller for handling ultrasonic and button inputs, and real-time communication. The Raspberry Pi performs object detection and risk assessment, while the ESP32 manages low-level sensing and user interactions. Processed data and alerts are securely transmitted to the cloud, which synchronizes information with a mobile application used by caregivers for monitoring, notifications, and emergency response.
+1. Replace `hero-device.svg` with `hero-device.webp`.
+2. Update the matching `src` in `index.html`.
+3. Keep image files inside `docs/images`.
+4. Compress photographs before committing.
+5. Prefer WebP for photographs and SVG or PNG for diagrams.
 
----
+See `docs/images/README.md` for the full placeholder replacement table.
 
-## Hardware and Software Designs
+## Edit Content
 
-### Hardware Design
-- Raspberry Pi 4 with camera module for object and vehicle detection  
-- ESP32 microcontroller for sensor processing and control  
-- Ultrasonic sensors for obstacle distance measurement  
-- Speaker for audio feedback  
-- Two physical buttons: SOS and Mode Selection  
-- Rechargeable battery system  
+Most editable areas are marked in `index.html` with comments beginning with `REPLACE:`. Update these after final verification:
 
-### Software Design
-- Embedded firmware on ESP32 for sensor data processing and mode control  
-- Vision-based object detection on Raspberry Pi  
-- Firebase-based backend for data storage and notifications  
-- Flutter-based mobile application for caregivers  
+- Device images and gallery photos
+- Architecture and data-flow diagrams
+- Team member and supervisor details
+- Budget values
+- Testing results
+- Final timeline dates
+- Application screenshots
 
----
+## Deploy With GitHub Pages
 
-## Testing
+1. Push the `docs` folder to the repository.
+2. Open repository Settings.
+3. Open Pages.
+4. Select "Deploy from a branch".
+5. Select `main`.
+6. Select `/docs`.
+7. Save.
+8. Visit:
 
-Testing includes unit testing of sensor readings, integration testing between ESP32 and Raspberry Pi, and functional testing of both navigation modes. Field tests are conducted in indoor corridors and near road crossings to validate detection accuracy, audio feedback clarity, and SOS reliability. Results are analyzed to improve robustness and reduce false alerts.
+```text
+https://cepdnaclk.github.io/e21-3yp-PathFinder/
+```
 
----
+## Troubleshooting
 
-## Detailed Budget
-
-| Item                     | Quantity | Unit Cost (LKR) | Total (LKR) |
-|--------------------------|----------|-----------------|-------------|
-| Raspberry Pi 4B          | 1        | 30,000          | 30,000      |
-| Pi V3 Camera Module      | 1        | 7,900           | 7,900       |
-| Speaker + Buttons        | -        | 2,000           | 2,000       |
-| Battery & Power Circuit  | -        | 8,000           | 8,000       |
-| NEO M8N GPS Module       | 1        | 4,000           | 4,000       |
-| **Total**                |          |                 | **51,900**  |
-
----
-
-## Conclusion
-
-PathFinder demonstrates a practical and affordable wearable navigation solution for visually impaired users by combining sensor fusion, edge computing, and mobile connectivity. The system enhances situational awareness in both pedestrian environments and road crossings while providing emergency assistance through an SOS feature. Future work includes improving detection accuracy, optimizing power consumption, and exploring commercialization opportunities for real-world deployment.
-
----
-
-## Links
-- [Project Repository](https://github.com/cepdnaclk/e21-3yp-PathFinder)
-- [Project Page](https://cepdnaclk.github.io/e21-3yp-PathFinder)
-- [Department of Computer Engineering](http://www.ce.pdn.ac.lk/)
-- [University of Peradeniya](https://eng.pdn.ac.lk/)
+- If styles do not load, confirm `css/style.css` exists and the site is served from the `docs` folder.
+- If images do not load, confirm the relative path in `index.html` matches the image filename.
+- If GitHub Pages shows a 404, confirm the repository Pages source is set to `main` and `/docs`.
+- If the mobile menu does not open, confirm `js/script.js` is present and browser JavaScript is enabled.
+- If placeholders are replaced with large photos, compress them to avoid slow loading.
+- The page remains readable without JavaScript, but the mobile menu, section reveal effects, lightbox, and back-to-top button require JavaScript.
