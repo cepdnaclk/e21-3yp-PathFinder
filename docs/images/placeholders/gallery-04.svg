@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="620" viewBox="0 0 900 620" role="img" aria-labelledby="title desc">
+  <title id="title">GPS and connectivity testing placeholder</title>
+  <desc id="desc">Gallery placeholder for GPS and connectivity testing.</desc>
+  <rect width="900" height="620" rx="28" fill="#071421"/>
+  <rect x="150" y="124" width="600" height="300" rx="28" fill="#0c1d2f" stroke="#ffffff" stroke-opacity="0.16"/>
+  <circle cx="450" cy="274" r="100" fill="#51e19a" opacity="0.12" stroke="#51e19a" stroke-width="5"/>
+  <path d="M450 205a56 56 0 0 0-56 56c0 44 56 104 56 104s56-60 56-104a56 56 0 0 0-56-56Z" fill="#57d9ff"/>
+  <circle cx="450" cy="262" r="19" fill="#071421"/>
+  <path d="M204 175c60 34 120 34 180 0M516 175c60 34 120 34 180 0" stroke="#57d9ff" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <text x="450" y="492" fill="#eef8ff" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="800" text-anchor="middle">GPS and Connectivity Testing</text>
+  <text x="450" y="532" fill="#9bb2c7" font-family="Segoe UI, Arial, sans-serif" font-size="21" text-anchor="middle">Replace with safe location or network testing photo</text>
+</svg>

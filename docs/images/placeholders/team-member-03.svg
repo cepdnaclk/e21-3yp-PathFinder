@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640" viewBox="0 0 640 640" role="img" aria-labelledby="title desc">
+  <title id="title">Team member photo placeholder</title>
+  <desc id="desc">Square portrait placeholder for a PathFinder team member.</desc>
+  <rect width="640" height="640" rx="28" fill="#071421"/>
+  <circle cx="515" cy="125" r="108" fill="#57d9ff" opacity="0.08"/>
+  <circle cx="132" cy="500" r="145" fill="#51e19a" opacity="0.07"/>
+  <path d="M320 130 470 220v160l-150 86-150-86V220l150-90Z" fill="#10283f" stroke="#57d9ff" stroke-width="5"/>
+  <circle cx="320" cy="240" r="48" fill="#57d9ff" opacity="0.3"/>
+  <path d="M230 364c32-58 148-58 180 0" fill="none" stroke="#51e19a" stroke-width="18" stroke-linecap="round"/>
+  <text x="320" y="475" fill="#eef8ff" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="800" text-anchor="middle">Team Member Photo</text>
+  <text x="320" y="518" fill="#9bb2c7" font-family="Segoe UI, Arial, sans-serif" font-size="22" text-anchor="middle">Replace with member portrait</text>
+</svg>
