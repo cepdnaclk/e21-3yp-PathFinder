@@ -319,7 +319,7 @@ class _WebLoginPageState extends State<WebLoginPage> {
                 ),
                 TextButton(
                   onPressed: () {
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       webFadeRoute(const WebSignupIntroPage()),
                     );
