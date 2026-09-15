@@ -1,8 +1,8 @@
-import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import '../../widgets/app_bottom_bar.dart';
 import '../../models/alert_model.dart';
 import '../../services/firestore_service.dart';
 import '../home/home_screen.dart';
@@ -201,7 +201,7 @@ class AlertHistoryScreen extends StatelessWidget {
           ),
         ],
       ),
-      bottomNavigationBar: _AlertBottomBar(
+      bottomNavigationBar: AppBottomBar(
         currentIndex: 3,
         onSelected: (index) => _selectBottomTab(context, index),
       ),
@@ -614,150 +614,6 @@ class _AlertSquareButton extends StatelessWidget {
           width: 44,
           height: 44,
           child: Icon(icon, color: Colors.white, size: 22),
-        ),
-      ),
-    );
-  }
-}
-
-class _AlertBottomBar extends StatelessWidget {
-  const _AlertBottomBar({required this.currentIndex, required this.onSelected});
-
-  final int currentIndex;
-  final ValueChanged<int> onSelected;
-
-  static const _items = <(IconData, String)>[
-    (Icons.home_outlined, 'Home'),
-    (Icons.location_on_outlined, 'Tracking'),
-    (Icons.videocam_outlined, 'Live Feed'),
-    (Icons.notifications_none_rounded, 'Alerts'),
-    (Icons.settings_outlined, 'Settings'),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: EdgeInsets.fromLTRB(
-            8,
-            9,
-            8,
-            max(10, MediaQuery.paddingOf(context).bottom),
-          ),
-          decoration: BoxDecoration(
-            color: const Color(0xED0A111C),
-            border: Border(
-              top: BorderSide(color: Colors.white.withValues(alpha: .09)),
-            ),
-          ),
-          child: Row(
-            children: List.generate(_items.length, (index) {
-              final selected = index == currentIndex;
-              final item = _items[index];
-              return Expanded(
-                child: InkWell(
-                  onTap: () => onSelected(index),
-                  borderRadius: BorderRadius.circular(14),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 3,
-                      vertical: 4,
-                    ),
-                    child: SizedBox(
-                      height: 56,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        clipBehavior: Clip.none,
-                        children: [
-                          Positioned.fill(
-                            top: 6,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: selected
-                                    ? Colors.transparent
-                                    : const Color(0xFF050A12),
-                                borderRadius: BorderRadius.circular(15),
-                                boxShadow: selected
-                                    ? null
-                                    : const [
-                                        BoxShadow(
-                                          color: Colors.black,
-                                          blurRadius: 7,
-                                          offset: Offset(0, -2),
-                                        ),
-                                      ],
-                              ),
-                            ),
-                          ),
-                          AnimatedPositioned(
-                            duration: const Duration(milliseconds: 240),
-                            curve: Curves.easeOutCubic,
-                            left: selected ? 2 : 5,
-                            right: selected ? 2 : 5,
-                            top: selected ? -3 : 8,
-                            bottom: selected ? 8 : 3,
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 240),
-                              decoration: BoxDecoration(
-                                gradient: selected
-                                    ? const LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: [
-                                          Color(0xFF60A5FA),
-                                          Color(0xFF2563EB),
-                                        ],
-                                      )
-                                    : const LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: [
-                                          Color(0xFF101A29),
-                                          Color(0xFF080F1A),
-                                        ],
-                                      ),
-                                borderRadius: BorderRadius.circular(13),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    item.$1,
-                                    size: 20,
-                                    color: selected
-                                        ? Colors.white
-                                        : const Color(0xFF66758A),
-                                  ),
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    item.$2,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: selected
-                                          ? Colors.white
-                                          : const Color(0xFF66758A),
-                                      fontSize: 8,
-                                      fontWeight: selected
-                                          ? FontWeight.w800
-                                          : FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }),
-          ),
         ),
       ),
     );

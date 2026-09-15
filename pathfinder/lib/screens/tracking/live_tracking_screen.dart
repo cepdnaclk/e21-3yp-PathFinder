@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -8,6 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:map_launcher/map_launcher.dart';
 
+import '../../widgets/app_bottom_bar.dart';
 import '../alerts/alert_history_screen.dart';
 import '../home/home_screen.dart';
 import '../home/settings_screen.dart';
@@ -235,7 +235,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
               ),
             ],
           ),
-          bottomNavigationBar: _TrackingBottomBar(
+          bottomNavigationBar: AppBottomBar(
             currentIndex: 1,
             onSelected: _selectBottomTab,
           ),
@@ -616,154 +616,6 @@ class _TrackingSquareButton extends StatelessWidget {
   }
 }
 
-class _TrackingBottomBar extends StatelessWidget {
-  const _TrackingBottomBar({
-    required this.currentIndex,
-    required this.onSelected,
-  });
-
-  final int currentIndex;
-  final ValueChanged<int> onSelected;
-
-  static const _items = <(IconData, String)>[
-    (Icons.home_outlined, 'Home'),
-    (Icons.location_on_outlined, 'Tracking'),
-    (Icons.videocam_outlined, 'Live Feed'),
-    (Icons.notifications_none_rounded, 'Alerts'),
-    (Icons.settings_outlined, 'Settings'),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: EdgeInsets.fromLTRB(
-            8,
-            9,
-            8,
-            max(10, MediaQuery.paddingOf(context).bottom),
-          ),
-          decoration: BoxDecoration(
-            color: const Color(0xED0A111C),
-            border: Border(
-              top: BorderSide(color: Colors.white.withValues(alpha: .09)),
-            ),
-          ),
-          child: Row(
-            children: List.generate(_items.length, (index) {
-              final selected = index == currentIndex;
-              final item = _items[index];
-              return Expanded(
-                child: InkWell(
-                  onTap: () => onSelected(index),
-                  borderRadius: BorderRadius.circular(14),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 3,
-                      vertical: 4,
-                    ),
-                    child: SizedBox(
-                      height: 56,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        clipBehavior: Clip.none,
-                        children: [
-                          Positioned.fill(
-                            top: 6,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: selected
-                                    ? Colors.transparent
-                                    : const Color(0xFF050A12),
-                                borderRadius: BorderRadius.circular(15),
-                                boxShadow: selected
-                                    ? null
-                                    : const [
-                                        BoxShadow(
-                                          color: Colors.black,
-                                          blurRadius: 7,
-                                          offset: Offset(0, -2),
-                                        ),
-                                      ],
-                              ),
-                            ),
-                          ),
-                          AnimatedPositioned(
-                            duration: const Duration(milliseconds: 240),
-                            curve: Curves.easeOutCubic,
-                            left: selected ? 2 : 5,
-                            right: selected ? 2 : 5,
-                            top: selected ? -3 : 8,
-                            bottom: selected ? 8 : 3,
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 240),
-                              decoration: BoxDecoration(
-                                gradient: selected
-                                    ? const LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: [
-                                          Color(0xFF60A5FA),
-                                          Color(0xFF2563EB),
-                                        ],
-                                      )
-                                    : const LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: [
-                                          Color(0xFF101A29),
-                                          Color(0xFF080F1A),
-                                        ],
-                                      ),
-                                borderRadius: BorderRadius.circular(13),
-                                boxShadow: null,
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    item.$1,
-                                    size: 20,
-                                    color: selected
-                                        ? Colors.white
-                                        : const Color(0xFF66758A),
-                                  ),
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    item.$2,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: selected
-                                          ? Colors.white
-                                          : const Color(0xFF66758A),
-                                      fontSize: 8,
-                                      fontWeight: selected
-                                          ? FontWeight.w800
-                                          : FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _TrackingBackground extends StatelessWidget {
   const _TrackingBackground();
 
@@ -843,7 +695,7 @@ class _TrackingLoading extends StatelessWidget {
           ),
         ],
       ),
-      bottomNavigationBar: _TrackingBottomBar(
+      bottomNavigationBar: AppBottomBar(
         currentIndex: 1,
         onSelected: onSelected,
       ),
