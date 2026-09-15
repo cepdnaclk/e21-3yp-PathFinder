@@ -1,1 +1,47 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"pathfinder-e7869","appId":"1:349312254099:android:ad34881c6817fed26d4d66","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"pathfinder-e7869","appId":"1:349312254099:ios:dc81cb68dcd7efdb6d4d66","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"pathfinder-e7869","configurations":{"android":"1:349312254099:android:ad34881c6817fed26d4d66","ios":"1:349312254099:ios:dc81cb68dcd7efdb6d4d66","web":"1:349312254099:web:8bb392bbb7531da86d4d66","windows":"1:349312254099:web:7b0f0a9b6fa4cb266d4d66"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "pathfinder-e7869",
+          "appId": "1:349312254099:android:ad34881c6817fed26d4d66",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "pathfinder-e7869",
+          "appId": "1:349312254099:ios:2eee9b35ec53d6cb6d4d66",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "pathfinder-e7869",
+          "configurations": {
+            "android": "1:349312254099:android:ad34881c6817fed26d4d66",
+            "ios": "1:349312254099:ios:dc81cb68dcd7efdb6d4d66",
+            "macos": "1:349312254099:ios:2eee9b35ec53d6cb6d4d66",
+            "web": "1:349312254099:web:8bb392bbb7531da86d4d66",
+            "windows": "1:349312254099:web:7b0f0a9b6fa4cb266d4d66"
+          }
+        }
+      }
+    }
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}

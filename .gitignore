@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+
+# Logs
+*.log
+
+# Backups
+*.bak
+*_backup.py
+*_backup_before_*.py
+
+# Firebase secrets
+firebase/ServiceAccountKey.json
+firebase/*.json
+
+# Models
+*.pt
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
