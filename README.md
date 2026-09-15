@@ -72,13 +72,12 @@ Testing includes unit testing of sensor readings, integration testing between ES
 
 | Item                     | Quantity | Unit Cost (LKR) | Total (LKR) |
 |--------------------------|----------|-----------------|-------------|
-| Raspberry Pi 4           | 1        | 30,000          | 30,000      |
-| ESP32                    | 1        | 1,700           | 1,700       |
-| Camera Module            | 1        | 7,900           | 7,900       |
-| Ultrasonic Sensors       | 3        | 300             | 900         |
+| Raspberry Pi 4B          | 1        | 30,000          | 30,000      |
+| Pi V3 Camera Module      | 1        | 7,900           | 7,900       |
 | Speaker + Buttons        | -        | 2,000           | 2,000       |
 | Battery & Power Circuit  | -        | 8,000           | 8,000       |
-| **Total**                |          |                 | **55,000**  |
+| NEO M8N GPS Module       | 1        | 4,000           | 4,000       |
+| **Total**                |          |                 | **51,900**  |
 
 ---
 

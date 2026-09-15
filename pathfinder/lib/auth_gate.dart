@@ -1,8 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'screens/sign_in_page.dart';
-import 'screens/link_device_page.dart';
-import 'screens/dashboard_page.dart';
+import 'screens/auth/link_device_screen.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/home/home_screen.dart';
 import 'services/firestore_service.dart';
 
 class AuthGate extends StatelessWidget {
@@ -22,7 +22,7 @@ class AuthGate extends StatelessWidget {
         final user = authSnapshot.data;
 
         if (user == null) {
-          return const SignInPage();
+          return const LoginScreen();
         }
 
         return FutureBuilder<String?>(
@@ -37,10 +37,10 @@ class AuthGate extends StatelessWidget {
             final deviceId = deviceSnapshot.data;
 
             if (deviceId == null || deviceId.isEmpty) {
-              return const LinkDevicePage();
+              return const LinkDeviceScreen();
             }
 
-            return DashboardPage(deviceId: deviceId);
+            return const HomeScreen();
           },
         );
       },

@@ -1,31 +1,44 @@
 {
-    "team": [
-        {
-            "name": "Wijenayaka D.L.P.A.",
-            "email": "e21442@eng.pdn.ac.lk",
-            "eNumber": "E/21/442"
-        },
-        {
-            "name": "Francisco R.D.D.K.",
-            "email": "e21141@eng.pdn.ac.lk",
-            "eNumber": "E/21/141"
-        },
-        {
-            "name": "Gunerathne R.C.",
-            "email": "e21157@eng.pdn.ac.lk",
-            "eNumber": "E/21/157"
-        },
-        {
-            "name": "Sasindu K.T.",
-            "email": "e21361@eng.pdn.ac.lk",
-            "eNumber": "E/21/361"
-        }
-    ],
-    "supervisors": [
-        {
-            "name": "Ms. Yasodha Vimukthi",
-            "email": "yasodhav@eng.pdn.ac.lk"
-        }
-    ],
-    "tags": ["Web", "Embedded Systems", "Full-Stack", "RESTful API", "JWT Authentication", "Responsive Design"]
+  "title": "PathFinder",
+  "team": [
+    {
+      "name": "Wijenayaka D.L.P.A.",
+      "email": "e21442@eng.pdn.ac.lk",
+      "eNumber": "E/21/442"
+    },
+    {
+      "name": "Francisco R.D.D.K.",
+      "email": "e21141@eng.pdn.ac.lk",
+      "eNumber": "E/21/141"
+    },
+    {
+      "name": "Gunerathne R.C.",
+      "email": "e21157@eng.pdn.ac.lk",
+      "eNumber": "E/21/157"
+    },
+    {
+      "name": "Sasindu K.T.",
+      "email": "e21361@eng.pdn.ac.lk",
+      "eNumber": "E/21/361"
+    }
+  ],
+  "supervisors": [
+    {
+      "name": "Ms. Yasodha Vimukthi",
+      "email": "yasodhav@eng.pdn.ac.lk"
+    },
+    {
+      "name": "Dr. Isuru Nawinne",
+      "email": "isurunawinne@eng.pdn.ac.lk"
+    }
+  ],
+  "tags": [
+    "Assistive Technology",
+    "Embedded Systems",
+    "Computer Vision",
+    "IoT",
+    "Mobile Application"
+  ],
+  "image": "cover_page.jpg",
+  "thumbnail": "thumbnail.jpg"
 }

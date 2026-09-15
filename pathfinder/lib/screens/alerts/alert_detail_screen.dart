@@ -29,7 +29,7 @@ class AlertDetailScreen extends StatelessWidget {
   }
 
   String _formatTimestamp() {
-    final dt = alert.timestamp?.toDate();
+    final dt = alert.createdAt?.toDate();
     if (dt == null) return 'No time available';
     return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} '
         '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
